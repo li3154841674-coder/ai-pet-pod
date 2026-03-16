@@ -10,8 +10,12 @@ export async function POST(req: Request) {
     }
 
     const apiKey = process.env.COMFLY_API_KEY;
+    console.log("🔍 环境变量检查:");
+    console.log("  - COMFLY_API_KEY 是否存在:", !!apiKey);
+    console.log("  - COMFLY_API_KEY 长度:", apiKey?.length || 0);
+    
     if (!apiKey) {
-      return NextResponse.json({ error: "API Key 未配置，请联系管理员" }, { status: 500 });
+      return NextResponse.json({ error: "API Key 未配置，请在 Vercel 后台设置 COMFLY_API_KEY" }, { status: 500 });
     }
 
     console.log("=" .repeat(60));
