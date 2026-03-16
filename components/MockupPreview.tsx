@@ -181,7 +181,7 @@ export default function MockupPreview({
                       </h3>
                       <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden">
                         <img
-                          src={originalImageUrl}
+                          src={originalImageUrl || ""}
                           alt="Original Pet Photo"
                           className="w-full h-full object-cover"
                         />
@@ -200,7 +200,7 @@ export default function MockupPreview({
                       </h3>
                       <div className="aspect-square bg-white rounded-2xl overflow-hidden">
                         <img
-                          src={generatedImageUrl}
+                          src={generatedImageUrl || ""}
                           alt="AI Generated Pet"
                           className="w-full h-full object-contain"
                         />
