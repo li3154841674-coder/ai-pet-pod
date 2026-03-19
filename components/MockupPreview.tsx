@@ -1,9 +1,36 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
+
+const craftingStages = [
+  {
+    id: 0,
+    mainTitle: "智能识别爱宠神态...",
+    subTitle: "— 正在提取专属视觉特征 —",
+    duration: 3000,
+  },
+  {
+    id: 1,
+    mainTitle: "纳米级构图重构中...",
+    subTitle: "— 优化高定印花细节 —",
+    duration: 4000,
+  },
+  {
+    id: 2,
+    mainTitle: "模拟纤维物理融合特效...",
+    subTitle: "— 确保呈现最高质感 —",
+    duration: 4000,
+  },
+  {
+    id: 3,
+    mainTitle: "专属于您的印记，即将呈现...",
+    subTitle: "— 正在进行发丝级边缘校准 —",
+    duration: 3000,
+  },
+]
 
 interface MockupPreviewProps {
   originalImageUrl: string | null
@@ -26,6 +53,60 @@ export default function MockupPreview({
 }: MockupPreviewProps) {
   const [selectedSize, setSelectedSize] = useState<string>("M")
   const [activeView, setActiveView] = useState<'preview' | 'compare'>('preview')
+  const [currentStage, setCurrentStage] = useState(0)
+  const [fakeProgress, setFakeProgress] = useState(0)
+  const [isReady, setIsReady] = useState(false)
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const stageTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    if (isGenerating && !isRevealing) {
+      setCurrentStage(0)
+      setFakeProgress(0)
+      setIsReady(false)
+      
+      progressIntervalRef.current = setInterval(() => {
+        setFakeProgress((prev) => {
+          if (prev < 80) {
+            return prev + Math.random() * 8 + 4
+          } else if (prev < 95) {
+            return prev + Math.random() * 0.5 + 0.1
+          } else {
+            return prev
+          }
+        })
+      }, 200)
+      
+      let totalDuration = 0
+      craftingStages.forEach((stage, index) => {
+        totalDuration += stage.duration
+        setTimeout(() => {
+          setCurrentStage(index + 1)
+        }, totalDuration)
+      })
+      
+      return () => {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current)
+        }
+        if (stageTimeoutRef.current) {
+          clearTimeout(stageTimeoutRef.current)
+        }
+      }
+    }
+  }, [isGenerating, isRevealing])
+
+  useEffect(() => {
+    if (generatedImageUrl && !isReady) {
+      setIsReady(true)
+      setFakeProgress(100)
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+      }
+    }
+  }, [generatedImageUrl, isReady])
+
+  const currentCraftingStage = craftingStages[Math.min(currentStage, craftingStages.length - 1)]
 
   if (!originalImageUrl && !isGenerating) {
     return null
@@ -122,43 +203,103 @@ export default function MockupPreview({
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-                          className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-2xl"
+                          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+                          className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/75 backdrop-blur-3xl"
                         >
                           <AnimatePresence mode="wait">
                             {!isRevealing ? (
                               <motion.div
                                 key="generating"
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -6 }}
-                                transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                                 className="flex flex-col items-center"
                               >
-                                <h3 className="text-gray-900 text-sm md:text-lg font-light tracking-[0.2em] text-center uppercase">
-                                  正在为您量身定制
-                                </h3>
-                                <p className="text-gray-400 text-xs tracking-[0.3em] mt-2 text-center">
-                                  — 独一无二 —
-                                </p>
-                                <div className="w-40 h-[1px] bg-gray-200 mt-8 overflow-hidden">
+                                <AnimatePresence mode="wait">
                                   <motion.div
-                                    className="h-full bg-gray-900"
-                                    style={{ width: `${progress}%` }}
+                                    key={currentCraftingStage.mainTitle}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                                    className="flex flex-col items-center"
+                                  >
+                                    <motion.h2
+                                      className="text-gray-900 text-lg md:text-xl font-light tracking-[0.2em] text-center"
+                                      initial={{ opacity: 0, y: 15 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{ opacity: 0, y: -10 }}
+                                      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                                    >
+                                      {currentCraftingStage.mainTitle}
+                                    </motion.h2>
+                                    <motion.p
+                                      className="text-gray-500 text-sm tracking-[0.15em] mt-3"
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{ opacity: 0, y: -5 }}
+                                      transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                                    >
+                                      {currentCraftingStage.subTitle}
+                                    </motion.p>
+                                  </motion.div>
+                                </AnimatePresence>
+                                
+                                <div className="w-48 h-[1px] bg-gray-200 mt-10 overflow-hidden">
+                                  <motion.div
+                                    className="h-full bg-gradient-to-r from-gray-300 via-gray-900 to-gray-300"
+                                    initial={{ width: "0%" }}
+                                    animate={{ width: `${Math.min(fakeProgress, 95)}%` }}
                                     transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
                                   />
                                 </div>
+                                
+                                <motion.div
+                                  className="mt-8 flex items-center gap-2"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.5 }}
+                                >
+                                  <motion.div
+                                    className="w-1.5 h-1.5 rounded-full bg-gray-400"
+                                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                                  />
+                                  <motion.div
+                                    className="w-1.5 h-1.5 rounded-full bg-gray-400"
+                                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                                  />
+                                  <motion.div
+                                    className="w-1.5 h-1.5 rounded-full bg-gray-400"
+                                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+                                  />
+                                </motion.div>
                               </motion.div>
                             ) : (
                               <motion.div
                                 key="revealing"
-                                initial={{ opacity: 0, scale: 0.96, filter: "blur(6px)" }}
+                                initial={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
                                 animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                                transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className="flex flex-col items-center"
                               >
-                                <p className="text-gray-900 text-base md:text-xl font-medium tracking-wide text-center">
+                                <motion.p
+                                  className="text-black text-xl md:text-3xl font-medium tracking-wide text-center"
+                                  initial={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+                                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                                  transition={{ duration: 1.2, ease: "easeOut" }}
+                                >
                                   专属于您的印记，呈现给您。
-                                </p>
+                                </motion.p>
+                                <motion.div
+                                  className="w-16 h-[2px] bg-gradient-to-r from-transparent via-gray-400 to-transparent mt-6"
+                                  initial={{ scaleX: 0, opacity: 0 }}
+                                  animate={{ scaleX: 1, opacity: 1 }}
+                                  transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+                                />
                               </motion.div>
                             )}
                           </AnimatePresence>
