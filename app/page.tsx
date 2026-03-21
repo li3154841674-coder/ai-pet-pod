@@ -8,6 +8,7 @@ import AppleImageShowcase from "@/components/AppleImageShowcase"
 import AIDetailShowcase from "@/components/AIDetailShowcase"
 import InteractiveUpload from "@/components/InteractiveUpload"
 import MockupPreview from "@/components/MockupPreview"
+import OrderFinder from "@/components/OrderFinder"
 import { useToast } from "@/components/ui/toast"
 
 export default function Home() {
@@ -147,38 +148,40 @@ export default function Home() {
       <AppleImageShowcase />
       <AIDetailShowcase />
 
-      <section className="py-12 md:py-20 bg-gray-50">
-        <div className="container mx-auto px-6 md:px-8">
-          <div className="text-center mb-8 md:mb-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+      {!isLoading && !generatedImageUrl && (
+        <section className="py-12 md:py-20 bg-gray-50">
+          <div className="container mx-auto px-6 md:px-8">
+            <div className="text-center mb-8 md:mb-12">
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+                viewport={{ once: true }}
+                className="text-2xl md:text-4xl font-light text-gray-900 mb-3 md:mb-4 break-words whitespace-normal tracking-tight"
+              >
+                上传你的宠物
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
+                viewport={{ once: true }}
+                className="text-base md:text-xl text-gray-500 max-w-2xl mx-auto break-words whitespace-normal"
+              >
+                只需一张照片，AI 为你打造专属设计
+              </motion.p>
+            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1], delay: 0.2 }}
               viewport={{ once: true }}
-              className="text-2xl md:text-4xl font-light text-gray-900 mb-3 md:mb-4 break-words whitespace-normal tracking-tight"
             >
-              上传你的宠物
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
-              viewport={{ once: true }}
-              className="text-base md:text-xl text-gray-500 max-w-2xl mx-auto break-words whitespace-normal"
-            >
-              只需一张照片，AI 为你打造专属设计
-            </motion.p>
+              <InteractiveUpload onUpload={handleUpload} isLoading={isLoading} />
+            </motion.div>
           </div>
-          <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.98 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1], delay: 0.2 }}
-            viewport={{ once: true }}
-          >
-            <InteractiveUpload onUpload={handleUpload} isLoading={isLoading} />
-          </motion.div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <MockupPreview
         originalImageUrl={originalImageUrl}
@@ -188,6 +191,34 @@ export default function Home() {
         progress={progress}
         isRevealing={isRevealing}
       />
+
+      <section className="py-12 md:py-20 bg-gradient-to-b from-gray-50 to-white">
+        <div className="container mx-auto px-6 md:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+            viewport={{ once: true }}
+            className="text-center mb-8 md:mb-12"
+          >
+            <h2 className="text-2xl md:text-4xl font-light text-gray-900 mb-3 md:mb-4 break-words whitespace-normal tracking-tight">
+              已有订单？
+            </h2>
+            <p className="text-base md:text-xl text-gray-500 max-w-2xl mx-auto break-words whitespace-normal">
+              输入手机号码，查找你的专属定制
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1], delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            <OrderFinder />
+          </motion.div>
+        </div>
+      </section>
 
       <footer className="py-12 bg-gray-900 text-white">
         <div className="container mx-auto px-8 text-center">

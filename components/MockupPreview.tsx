@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
+import PaymentSheet from "./PaymentSheet"
 
 const craftingStages = [
   {
@@ -46,16 +48,19 @@ const sizes = ["S", "M", "L", "XL"]
 export default function MockupPreview({
   originalImageUrl,
   generatedImageUrl,
-  onCheckout,
+  onCheckout: _onCheckout,
   isGenerating = false,
-  progress = 0,
+  progress: _progress = 0,
   isRevealing = false,
 }: MockupPreviewProps) {
+  const router = useRouter()
   const [selectedSize, setSelectedSize] = useState<string>("M")
   const [activeView, setActiveView] = useState<'preview' | 'compare'>('preview')
   const [currentStage, setCurrentStage] = useState(0)
   const [fakeProgress, setFakeProgress] = useState(0)
   const [isReady, setIsReady] = useState(false)
+  const [isPaymentSheetOpen, setIsPaymentSheetOpen] = useState(false)
+  const [isHoveringOrder, setIsHoveringOrder] = useState(false)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const stageTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -113,7 +118,7 @@ export default function MockupPreview({
   }
 
   return (
-    <section className="py-10 md:py-20 bg-white">
+    <section className="py-8 md:py-16 bg-white">
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -451,10 +456,42 @@ export default function MockupPreview({
               <Button
                 size="lg"
                 className="w-full h-11 text-sm font-medium bg-gray-900 hover:bg-gray-800 rounded-full transition-all duration-300 shadow-sm hover:shadow"
-                onClick={() => onCheckout(selectedSize)}
+                onClick={() => setIsPaymentSheetOpen(true)}
               >
                 确认定制并支付
               </Button>
+
+              <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => router.push('/order')}
+                onMouseEnter={() => setIsHoveringOrder(true)}
+                onMouseLeave={() => setIsHoveringOrder(false)}
+                className="w-full h-11 text-sm font-medium bg-white border-2 border-gray-200 hover:border-gray-300 rounded-full transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group"
+              >
+                <motion.div
+                  animate={{ rotate: isHoveringOrder ? 360 : 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-5 h-5 flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </motion.div>
+                <span className="text-gray-700 group-hover:text-gray-900 transition-colors">
+                  订单中心
+                </span>
+                <motion.svg
+                  animate={{ x: isHoveringOrder ? 4 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </motion.svg>
+              </motion.button>
 
               <div className="pt-4 border-t border-gray-100">
                 <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
@@ -479,14 +516,29 @@ export default function MockupPreview({
               <p className="text-xs text-gray-400">售价</p>
               <p className="text-lg font-light text-gray-900">¥69.9</p>
             </div>
-            <Button
-              className="h-10 text-sm font-medium bg-gray-900 hover:bg-gray-800 rounded-full px-6 flex-1 max-w-xs"
-              onClick={() => onCheckout(selectedSize)}
-            >
-              立即购买
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                className="h-10 text-sm font-medium bg-white border border-gray-200 text-gray-700 rounded-full px-4"
+                onClick={() => router.push('/order')}
+              >
+                订单
+              </Button>
+              <Button
+                className="h-10 text-sm font-medium bg-gray-900 hover:bg-gray-800 rounded-full px-6"
+                onClick={() => setIsPaymentSheetOpen(true)}
+              >
+                立即购买
+              </Button>
+            </div>
           </motion.div>
         </div>
+
+        <PaymentSheet
+          isOpen={isPaymentSheetOpen}
+          onClose={() => setIsPaymentSheetOpen(false)}
+          total={69.9}
+          generatedImageUrl={generatedImageUrl}
+        />
       </div>
     </section>
   )
