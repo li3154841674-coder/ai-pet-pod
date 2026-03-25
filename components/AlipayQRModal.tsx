@@ -284,7 +284,7 @@ export default function AlipayQRModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100]"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[200]"
         onClick={onClose}
       />
 
@@ -293,7 +293,7 @@ export default function AlipayQRModal({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="fixed inset-0 z-[101] flex items-center justify-center pointer-events-none"
+        className="fixed inset-0 z-[201] flex items-center justify-center pointer-events-none"
       >
         <div 
           className="pointer-events-auto relative"
