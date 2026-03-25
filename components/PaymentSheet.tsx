@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Check, Loader2, Smartphone, Monitor } from "lucide-react"
 import AlipayQRModal from "./AlipayQRModal"
+import { useToast } from "@/components/ui/toast"
 
 const springTransition: { type: "spring"; stiffness: number; damping: number } = {
   type: "spring",
@@ -244,7 +245,7 @@ interface ShippingViewProps {
   inputRef: React.RefObject<HTMLInputElement | null>
 }
 
-function PaymentView({ selectedPayment, onSelectPayment, onContinue, total }: PaymentViewProps) {
+function PaymentView({ selectedPayment, onSelectPayment, onContinue, total, isProcessing }: PaymentViewProps) {
   return (
     <div className="px-4 md:px-6 pb-6 md:pb-8 pt-2 md:pt-4">
       <motion.h2
@@ -331,16 +332,23 @@ function PaymentView({ selectedPayment, onSelectPayment, onContinue, total }: Pa
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, ...springTransition }}
         onClick={onContinue}
-        disabled={!selectedPayment}
-        whileTap={selectedPayment ? { scale: 0.97 } : {}}
-        className={`w-full max-w-md mx-auto mt-6 py-4 md:py-4.5 rounded-2xl font-medium text-base transition-all duration-200 shadow-lg ${
-          selectedPayment
+        disabled={!selectedPayment || isProcessing}
+        whileTap={selectedPayment && !isProcessing ? { scale: 0.97 } : {}}
+        className={`w-full max-w-md mx-auto mt-6 py-4 md:py-4.5 rounded-2xl font-medium text-base transition-all duration-200 shadow-lg flex items-center justify-center gap-2 ${
+          selectedPayment && !isProcessing
             ? "bg-gray-900 text-white hover:bg-gray-800"
             : "bg-gray-200 text-gray-400 cursor-not-allowed"
         }`}
         style={{ touchAction: 'manipulation' }}
       >
-        确认支付
+        {isProcessing ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            正在创建订单...
+          </>
+        ) : (
+          "确认支付"
+        )}
       </motion.button>
     </div>
   )
@@ -351,6 +359,7 @@ interface PaymentViewProps {
   onSelectPayment: (payment: "wechat" | "alipay") => void
   onContinue: () => void
   total: number
+  isProcessing?: boolean
 }
 
 function PaymentOption({
@@ -660,6 +669,7 @@ function SuccessView({ onClose }: { onClose: () => void }) {
 }
 
 export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl }: PaymentSheetProps) {
+  const { toast } = useToast()
   const [currentView, setCurrentView] = useState<"shipping" | "payment" | "qr" | "success">("shipping")
   const [direction, setDirection] = useState(1)
   const [selectedPayment, setSelectedPayment] = useState<"wechat" | "alipay" | null>(null)
@@ -801,8 +811,13 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
     } catch (error) {
       console.error("Create payment error:", error)
       setIsProcessing(false)
+      toast({
+        title: "创建订单失败",
+        description: error instanceof Error ? error.message : "请稍后重试",
+        variant: "destructive",
+      })
     }
-  }, [selectedPayment])
+  }, [selectedPayment, toast])
 
   const handlePaymentSuccess = useCallback(() => {
     setShowQRModal(false)
@@ -859,6 +874,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
             onSelectPayment={setSelectedPayment}
             onContinue={handleContinueToQR}
             total={total}
+            isProcessing={isProcessing}
           />
         )
       case "qr":
