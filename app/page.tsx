@@ -255,7 +255,7 @@ export default function Home() {
       <footer className="py-12 bg-gray-900 text-white">
         <div className="container mx-auto px-8 text-center">
           <p className="text-gray-400">
-            © 2024 AI 宠物服装定制. All rights reserved.
+            © 2024 AI 宠物服装定制. All rights reserved. | v2.0
           </p>
         </div>
       </footer>
