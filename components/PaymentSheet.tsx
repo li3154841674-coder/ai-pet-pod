@@ -780,11 +780,19 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
   }, [])
 
   const handleContinueToQR = useCallback(async () => {
-    if (!selectedPayment) return
+    console.log("🎯 [DEBUG] handleContinueToQR 被调用")
+    console.log("📋 [DEBUG] selectedPayment:", selectedPayment)
+    
+    if (!selectedPayment) {
+      console.log("❌ [DEBUG] 没有选择支付方式")
+      return
+    }
 
+    console.log("⏳ [DEBUG] 设置 isProcessing 为 true")
     setIsProcessing(true)
 
     try {
+      console.log("🚀 [DEBUG] 开始请求 /api/payment/create")
       const response = await fetch("/api/payment/create", {
         method: "POST",
         headers: {
@@ -796,20 +804,24 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         }),
       })
 
+      console.log("📡 [DEBUG] 收到响应，状态码:", response.status)
       const data = await response.json()
+      console.log("📦 [DEBUG] 响应数据:", data)
 
       if (data.error || !data.success) {
         throw new Error(data.error || "创建支付订单失败")
       }
 
+      console.log("✅ [DEBUG] 创建订单成功")
       setIsProcessing(false)
       
       setCurrentPaymentUrl(data.paymentUrl)
       setCurrentOrderId(data.orderId)
+      console.log("🔄 [DEBUG] 设置 showQRModal 为 true")
       setShowQRModal(true)
 
     } catch (error) {
-      console.error("Create payment error:", error)
+      console.error("❌ [DEBUG] 创建支付订单错误:", error)
       setIsProcessing(false)
       toast({
         title: "创建订单失败",
