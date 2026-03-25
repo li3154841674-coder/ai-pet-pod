@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Check } from "lucide-react"
+import { Check, Loader2, Smartphone, Monitor } from "lucide-react"
+import AlipayQRModal from "./AlipayQRModal"
 
 const springTransition: { type: "spring"; stiffness: number; damping: number } = {
   type: "spring",
@@ -36,6 +37,13 @@ interface PaymentSheetProps {
   onClose: () => void
   total: number
   generatedImageUrl?: string | null
+}
+
+interface PaymentResponse {
+  orderId: string
+  payUrl: string
+  qrCode: string
+  status: string
 }
 
 function TShirtPreview({ 
@@ -410,55 +418,62 @@ function PaymentOption({
   )
 }
 
-function FaceIdAnimation({ isProcessing }: { isProcessing: boolean }) {
-  return (
-    <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      className="relative w-20 h-20"
-    >
-      <motion.div
-        animate={isProcessing ? {
-          rotate: 360,
-        } : {}}
-        transition={isProcessing ? {
-          duration: 2,
-          repeat: Infinity,
-          ease: "linear",
-        } : {}}
-        className="absolute inset-0 rounded-full border-4 border-gray-200"
-      />
-      <motion.div
-        animate={isProcessing ? {
-          rotate: 360,
-        } : {}}
-        transition={isProcessing ? {
-          duration: 1.5,
-          repeat: Infinity,
-          ease: "linear",
-        } : {}}
-        className="absolute inset-2 rounded-full border-4 border-blue-500 border-t-transparent"
-      />
-      <motion.div
-        animate={isProcessing ? {
-          scale: [1, 1.1, 1],
-        } : {}}
-        transition={isProcessing ? {
-          duration: 1,
-          repeat: Infinity,
-        } : {}}
-        className="absolute inset-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
-      >
-        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-      </motion.div>
-    </motion.div>
-  )
-}
+function PaymentQRView({ qrCode, paymentMethod, orderId, onCancel, isPolling }: {
+  qrCode: string
+  paymentMethod: "wechat" | "alipay"
+  orderId: string
+  onCancel: () => void
+  isPolling: boolean
+}) {
+  const [isMobile, setIsMobile] = useState(false)
 
-function ConfirmView({ shippingData, selectedPayment, onPay, isProcessing, total }: ConfirmViewProps) {
-  const showFaceId = isProcessing
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768)
+  }, [])
+
+  if (isMobile) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center justify-center min-h-[60vh] px-4 md:px-6 pb-6 md:pb-8 pt-2 md:pt-4"
+      >
+        <motion.div
+          animate={{
+            rotate: isPolling ? [0, 360] : 0,
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          className="w-16 h-16 mb-6"
+        >
+          <Loader2 className="w-16 h-16 text-blue-500" />
+        </motion.div>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-xl md:text-2xl font-semibold text-gray-900 mb-2"
+        >
+          正在跳转支付...
+        </motion.h2>
+
+        <p className="text-gray-500 text-center mb-6">
+          请在支付页面完成付款
+        </p>
+
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={onCancel}
+          className="px-6 py-2.5 text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          取消支付
+        </motion.button>
+      </motion.div>
+    )
+  }
 
   return (
     <div className="px-4 md:px-6 pb-6 md:pb-8 pt-2 md:pt-4">
@@ -466,112 +481,84 @@ function ConfirmView({ shippingData, selectedPayment, onPay, isProcessing, total
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="text-xl md:text-2xl font-semibold text-gray-900 text-center mb-6"
+        className="text-xl md:text-2xl font-semibold text-gray-900 text-center mb-6 md:mb-8"
       >
-        确认支付
+        请扫码支付
       </motion.h2>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, ...springTransition }}
-        className="space-y-3 md:space-y-4 max-w-md mx-auto"
-      >
-        <div className="p-4 bg-gray-50 rounded-2xl space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <svg className="w-4.5 h-4.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500">收货人</p>
-              <p className="text-gray-900 font-medium truncate">{shippingData.name}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <svg className="w-4.5 h-4.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500">手机号码</p>
-              <p className="text-gray-900 font-medium truncate">{shippingData.phone}</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <svg className="w-4.5 h-4.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500">配送地址</p>
-              <p className="text-gray-900 font-medium break-words">{shippingData.address}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 bg-gray-50 rounded-2xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-500 text-sm">支付方式</span>
-            <span className="text-gray-900 font-medium text-sm">
-              {selectedPayment === "wechat" ? "微信支付" : "支付宝"}
-            </span>
-          </div>
-          <div className="flex justify-between text-lg md:text-xl font-bold text-gray-900 pt-3 border-t border-gray-200">
-            <span>支付金额</span>
-            <span className="text-blue-600">¥{total}</span>
-          </div>
-        </div>
-      </motion.div>
-
-      {showFaceId ? (
+      <div className="flex flex-col items-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="mt-8 flex flex-col items-center"
+          transition={{ delay: 0.1, ...springTransition }}
+          className="relative p-6 bg-white rounded-3xl shadow-xl"
         >
-          <FaceIdAnimation isProcessing={isProcessing} />
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6 text-gray-600 font-medium"
-          >
-            {isProcessing ? "正在加密支付..." : "支付成功"}
-          </motion.p>
+          <div className="absolute inset-0 rounded-3xl backdrop-blur-sm bg-white/50" />
+          <div className="relative">
+            <img
+              src={qrCode}
+              alt="支付二维码"
+              className="w-48 h-48 rounded-2xl"
+            />
+
+            {isPolling && (
+              <motion.div
+                className="absolute inset-0 flex items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-white/60" />
+                <div className="relative flex flex-col items-center">
+                  <motion.div
+                    animate={{
+                      rotate: [0, 360],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="w-12 h-12 mb-2"
+                  >
+                    <Loader2 className="w-12 h-12 text-blue-500" />
+                  </motion.div>
+                  <p className="text-gray-600 text-sm font-medium">等待支付中...</p>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </motion.div>
-      ) : (
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, ...springTransition }}
-          onClick={onPay}
-          whileTap={{ scale: 0.97 }}
-          className="w-full max-w-md mx-auto mt-8 py-4 md:py-4.5 bg-gray-900 text-white rounded-2xl font-medium text-base hover:bg-gray-800 transition-all duration-200 shadow-lg shadow-gray-900/20 flex items-center justify-center gap-3"
-          style={{ touchAction: 'manipulation' }}
+          transition={{ delay: 0.2 }}
+          className="flex items-center gap-2 mt-6 p-4 bg-gray-50 rounded-2xl"
         >
-          <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          确认支付 ¥{total}
+          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+            <Monitor className="w-5 h-5 text-gray-500" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-gray-900 font-medium">
+              请使用{paymentMethod === "wechat" ? "微信" : "支付宝"}扫码
+            </p>
+            <p className="text-xs text-gray-500">订单号: {orderId}</p>
+          </div>
+        </motion.div>
+
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={onCancel}
+          className="mt-6 px-6 py-2.5 text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          取消支付
         </motion.button>
-      )}
+      </div>
     </div>
   )
-}
-
-interface ConfirmViewProps {
-  shippingData: ShippingData
-  selectedPayment: "wechat" | "alipay"
-  onPay: () => void
-  isProcessing: boolean
-  total: number
 }
 
 function SuccessView({ onClose }: { onClose: () => void }) {
@@ -673,10 +660,11 @@ function SuccessView({ onClose }: { onClose: () => void }) {
 }
 
 export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl }: PaymentSheetProps) {
-  const [currentView, setCurrentView] = useState<"shipping" | "payment" | "confirm" | "success">("shipping")
+  const [currentView, setCurrentView] = useState<"shipping" | "payment" | "qr" | "success">("shipping")
   const [direction, setDirection] = useState(1)
   const [selectedPayment, setSelectedPayment] = useState<"wechat" | "alipay" | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isPolling, setIsPolling] = useState(false)
   const [shippingData, setShippingData] = useState<ShippingData>({
     name: "",
     phone: "",
@@ -685,8 +673,12 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
   const [phoneError, setPhoneError] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
   const [tshirtColor, setTshirtColor] = useState<"white" | "black" | "navy">("white")
-
+  const [paymentData, setPaymentData] = useState<PaymentResponse | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [showQRModal, setShowQRModal] = useState(false)
+  const [currentPaymentUrl, setCurrentPaymentUrl] = useState("")
+  const [currentOrderId, setCurrentOrderId] = useState("")
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -736,40 +728,109 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
   }, [validateShipping])
 
   const handleBack = useCallback(() => {
-    if (currentView === "payment") {
-      setDirection(-1)
-      setCurrentView("shipping")
-    } else if (currentView === "confirm") {
+    if (currentView === "qr") {
       setDirection(-1)
       setCurrentView("payment")
-      setIsProcessing(false)
+      setIsPolling(false)
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+    } else if (currentView === "payment") {
+      setDirection(-1)
+      setCurrentView("shipping")
     }
   }, [currentView])
 
-  const handleContinueToConfirm = useCallback(() => {
-    if (selectedPayment) {
-      setDirection(1)
-      setCurrentView("confirm")
+  const pollOrderStatus = useCallback((orderId: string) => {
+    let attempts = 0
+    const maxAttempts = 60
+
+    pollingIntervalRef.current = setInterval(async () => {
+      attempts++
+
+      if (attempts >= maxAttempts) {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current)
+        }
+        setIsPolling(false)
+        return
+      }
+
+      const mockPaymentSuccess = Math.random() < 0.1
+      
+      if (mockPaymentSuccess) {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current)
+        }
+        setIsPolling(false)
+        setDirection(1)
+        setCurrentView("success")
+      }
+    }, 2000)
+  }, [])
+
+  const handleContinueToQR = useCallback(async () => {
+    if (!selectedPayment) return
+
+    setIsProcessing(true)
+
+    try {
+      const response = await fetch("/api/payment/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "观象高定宠物服装",
+          totalFee: 69.9,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.error || !data.success) {
+        throw new Error(data.error || "创建支付订单失败")
+      }
+
+      setIsProcessing(false)
+      
+      setCurrentPaymentUrl(data.paymentUrl)
+      setCurrentOrderId(data.orderId)
+      setShowQRModal(true)
+
+    } catch (error) {
+      console.error("Create payment error:", error)
+      setIsProcessing(false)
     }
   }, [selectedPayment])
 
-  const handlePay = useCallback(() => {
-    setIsProcessing(true)
-    setTimeout(() => {
-      setIsProcessing(false)
-      setDirection(1)
-      setCurrentView("success")
-    }, 3000)
+  const handlePaymentSuccess = useCallback(() => {
+    setShowQRModal(false)
+    setDirection(1)
+    setCurrentView("success")
   }, [])
+
+  const handleCancelPayment = useCallback(() => {
+    setIsPolling(false)
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+    }
+    handleBack()
+  }, [handleBack])
 
   const handleClose = useCallback(() => {
     onClose()
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+    }
     setTimeout(() => {
       setCurrentView("shipping")
       setSelectedPayment(null)
       setShippingData({ name: "", phone: "", address: "" })
       setPhoneError("")
       setIsProcessing(false)
+      setIsPolling(false)
+      setPaymentData(null)
     }, 500)
   }, [onClose])
 
@@ -796,18 +857,19 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
           <PaymentView
             selectedPayment={selectedPayment}
             onSelectPayment={setSelectedPayment}
-            onContinue={handleContinueToConfirm}
+            onContinue={handleContinueToQR}
             total={total}
           />
         )
-      case "confirm":
+      case "qr":
+        if (!paymentData) return null
         return (
-          <ConfirmView
-            shippingData={shippingData}
-            selectedPayment={selectedPayment!}
-            onPay={handlePay}
-            isProcessing={isProcessing}
-            total={total}
+          <PaymentQRView
+            qrCode={paymentData.qrCode}
+            paymentMethod={selectedPayment || "wechat"}
+            orderId={paymentData.orderId}
+            onCancel={handleCancelPayment}
+            isPolling={isPolling}
           />
         )
       case "success":
@@ -818,86 +880,96 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
   }
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className="fixed inset-0 bg-black/20 backdrop-blur-md z-[100]"
-        onClick={handleClose}
-      />
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] pointer-events-none"
-      >
+    <>
+      <AnimatePresence>
         <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={springTransition}
-          className="fixed bottom-0 left-0 right-0 z-[101] bg-white/80 backdrop-blur-2xl rounded-t-3xl md:rounded-t-[2rem] shadow-2xl pointer-events-auto"
-          style={{ maxHeight: isMobile ? "88vh" : "92vh" }}
-          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 bg-black/20 backdrop-blur-md z-[100]"
+          onClick={handleClose}
+        />
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] pointer-events-none"
         >
-          <div className="flex flex-col" style={{ maxHeight: isMobile ? "88vh" : "92vh" }}>
-            <div className="flex items-center justify-center pt-4 pb-2 md:pt-3">
-              <motion.div
-                drag="y"
-                dragConstraints={{ top: 0, bottom: 0 }}
-                dragElastic={0.1}
-                onDragEnd={(_, info) => {
-                  if (info.offset.y > 100) {
-                    handleClose()
-                  }
-                }}
-                className="w-12 h-1.5 bg-gray-300 rounded-full cursor-grab active:cursor-grabbing"
-              />
-            </div>
-
-            <div className="relative px-2">
-              {currentView !== "success" && currentView !== "shipping" && (
-                <motion.button
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  onClick={handleBack}
-                  className="absolute top-0 left-2 w-10 h-10 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors z-10 active:scale-95"
-                  style={{ touchAction: 'manipulation' }}
-                >
-                  <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </motion.button>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
-              <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={springTransition}
+            className="fixed bottom-0 left-0 right-0 z-[101] bg-white/80 backdrop-blur-2xl rounded-t-3xl md:rounded-t-[2rem] shadow-2xl pointer-events-auto"
+            style={{ maxHeight: isMobile ? "88vh" : "92vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col" style={{ maxHeight: isMobile ? "88vh" : "92vh" }}>
+              <div className="flex items-center justify-center pt-4 pb-2 md:pt-3">
                 <motion.div
-                  key={currentView}
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={springTransition}
-                >
-                  {renderCurrentView()}
-                </motion.div>
-              </AnimatePresence>
+                  drag="y"
+                  dragConstraints={{ top: 0, bottom: 0 }}
+                  dragElastic={0.1}
+                  onDragEnd={(_, info) => {
+                    if (info.offset.y > 100) {
+                      handleClose()
+                    }
+                  }}
+                  className="w-12 h-1.5 bg-gray-300 rounded-full cursor-grab active:cursor-grabbing"
+                />
+              </div>
+
+              <div className="relative px-2">
+                {currentView !== "success" && currentView !== "shipping" && (
+                  <motion.button
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    onClick={handleBack}
+                    className="absolute top-0 left-2 w-10 h-10 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors z-10 active:scale-95"
+                    style={{ touchAction: 'manipulation' }}
+                  >
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </motion.button>
+                )}
+              </div>
+
+              <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+                <AnimatePresence mode="wait" custom={direction}>
+                  <motion.div
+                    key={currentView}
+                    custom={direction}
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={springTransition}
+                  >
+                    {renderCurrentView()}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              <div className="h-6 md:h-0" />
             </div>
 
-            <div className="h-6 md:h-0" />
-          </div>
-
-          <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
-            <p className="text-[10px] text-gray-300">Designed by G-PHOTO in Jiangxi.</p>
-          </div>
+            <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
+              <p className="text-[10px] text-gray-300">Designed by G-PHOTO in Jiangxi.</p>
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </AnimatePresence>
+      </AnimatePresence>
+      
+      <AlipayQRModal
+        isOpen={showQRModal}
+        onClose={() => setShowQRModal(false)}
+        paymentUrl={currentPaymentUrl}
+        orderId={currentOrderId}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
+    </>
   )
 }

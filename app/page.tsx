@@ -21,6 +21,9 @@ export default function Home() {
   const { toast } = useToast()
 
   const handleUpload = async (file: File) => {
+    console.log("🎯 [DEBUG] 开始上传图片")
+    console.log("📄 [DEBUG] 文件信息:", { name: file.name, size: file.size, type: file.type })
+    
     setIsLoading(true)
     setIsGenerating(true)
     setIsRevealing(false)
@@ -33,17 +36,25 @@ export default function Home() {
     let errorMessage = "请稍后重试"
 
     try {
+      console.log("📖 [DEBUG] 开始转换图片为 Base64")
       const base64Image = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = (e) => {
-          resolve(e.target?.result as string)
+          const result = e.target?.result as string
+          console.log("✅ [DEBUG] Base64 转换成功，长度:", result.length)
+          resolve(result)
         }
-        reader.onerror = reject
+        reader.onerror = (e) => {
+          console.error("❌ [DEBUG] Base64 转换失败:", e)
+          reject(e)
+        }
         reader.readAsDataURL(file)
       })
       
+      console.log("🖼️  [DEBUG] 设置原始图片 URL")
       setOriginalImageUrl(base64Image)
 
+      console.log("⏱️  [DEBUG] 开始进度条动画")
       progressInterval = setInterval(() => {
         setProgress((prev) => {
           if (prev < 80) {
@@ -56,6 +67,7 @@ export default function Home() {
         })
       }, 200)
 
+      console.log("🚀 [DEBUG] 发送请求到 /api/generate")
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
@@ -64,28 +76,48 @@ export default function Home() {
         body: JSON.stringify({ image: base64Image }),
       })
 
+      console.log("📡 [DEBUG] 收到响应，状态码:", response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("❌ [DEBUG] API 响应错误:", response.status, errorText)
+        throw new Error(`API 错误: ${response.status}`)
+      }
+
       const data = await response.json()
+      console.log("📦 [DEBUG] 完整响应数据:", data)
 
       if (data.success) {
+        console.log("✅ [DEBUG] 生成成功，图片 URL:", data.imageUrl)
         setGeneratedImageUrl(data.imageUrl)
+        console.log("🖼️  [DEBUG] 已设置 generatedImageUrl 状态")
       } else {
         hasError = true
         errorMessage = data.error || "生成失败"
+        console.error("❌ [DEBUG] 生成失败:", errorMessage)
       }
     } catch (error) {
-      console.error("Error uploading image:", error)
+      console.error("💥 [DEBUG] 上传过程发生异常:", error)
       hasError = true
       errorMessage = "请稍后重试"
     }
 
     if (progressInterval) {
       clearInterval(progressInterval)
+      console.log("⏹️  [DEBUG] 停止进度条")
     }
 
     setProgress(100)
     setIsRevealing(true)
 
     setTimeout(() => {
+      console.log("🏁 [DEBUG] 完成上传流程")
+      console.log("📊 [DEBUG] 最终状态检查:", {
+        originalImageUrl: !!originalImageUrl,
+        generatedImageUrl: !!generatedImageUrl,
+        hasError
+      })
+      
       setIsGenerating(false)
       setIsRevealing(false)
       setIsLoading(false)

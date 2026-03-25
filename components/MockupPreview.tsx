@@ -113,7 +113,7 @@ export default function MockupPreview({
 
   const currentCraftingStage = craftingStages[Math.min(currentStage, craftingStages.length - 1)]
 
-  if (!originalImageUrl && !isGenerating) {
+  if (!originalImageUrl && !generatedImageUrl && !isGenerating) {
     return null
   }
 
@@ -184,7 +184,7 @@ export default function MockupPreview({
                           className="w-full h-full object-cover"
                         />
                         {(originalImageUrl || generatedImageUrl || isGenerating) && (
-                          <div className="absolute top-[17%] left-[18%] w-[64%] h-[55%] flex items-center justify-center overflow-hidden bg-transparent border-none">
+                          <div className="absolute top-[17%] left-[18%] w-[64%] h-[55%] flex items-center justify-center overflow-visible bg-transparent border-none">
                             {generatedImageUrl && (
                               <img
                                 src={generatedImageUrl}
@@ -360,9 +360,8 @@ export default function MockupPreview({
             <div className="lg:hidden space-y-6">
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-                viewport={{ once: true }}
                 className="text-center"
               >
                 <h3 className="text-xl font-light tracking-tight text-gray-900">
@@ -378,9 +377,8 @@ export default function MockupPreview({
 
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
-                viewport={{ once: true }}
               >
                 <p className="text-xs font-medium text-gray-500 mb-3 text-center tracking-wide uppercase">
                   选择尺码
@@ -390,9 +388,8 @@ export default function MockupPreview({
                     <motion.button
                       key={size}
                       initial={{ opacity: 0, scale: 0.9 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.06 }}
-                      viewport={{ once: true }}
                       onClick={() => setSelectedSize(size)}
                       className={`w-12 h-12 rounded-full text-sm font-medium transition-all duration-300 ${
                         selectedSize === size
@@ -411,9 +408,8 @@ export default function MockupPreview({
           <div className="w-full lg:w-80 lg:sticky lg:top-12 lg:self-start hidden lg:block">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay: 0.2 }}
-              viewport={{ once: true }}
               className="space-y-5"
             >
               <div>
@@ -437,9 +433,8 @@ export default function MockupPreview({
                     <motion.button
                       key={size}
                       initial={{ opacity: 0, scale: 0.9 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1], delay: index * 0.06 }}
-                      viewport={{ once: true }}
                       onClick={() => setSelectedSize(size)}
                       className={`w-12 h-12 rounded-full text-sm font-medium transition-all duration-300 ${
                         selectedSize === size
