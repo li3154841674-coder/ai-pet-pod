@@ -779,7 +779,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
     }, 2000)
   }, [])
 
-  const handleContinueToQR = useCallback(async () => {
+  const handleContinueToQR = useCallback(async () =&gt; {
     console.log("🎯 [DEBUG] handleContinueToQR 被调用")
     console.log("📋 [DEBUG] selectedPayment:", selectedPayment)
     
@@ -808,6 +808,17 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
       const data = await response.json()
       console.log("📦 [DEBUG] 响应数据:", data)
 
+      console.log("🔍 [DEBUG] 检查 errcode:", data.errcode)
+      
+      if (data.errcode === 0 &amp;&amp; data.url) {
+        console.log("✅ [DEBUG] 虎皮椒返回成功，准备跳转到:", data.url)
+        setIsProcessing(false)
+        
+        console.log("🚀 [DEBUG] 执行 window.location.href 跳转...")
+        window.location.href = data.url
+        return
+      }
+
       if (data.error || !data.success) {
         throw new Error(data.error || "创建支付订单失败")
       }
@@ -815,7 +826,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
       console.log("✅ [DEBUG] 创建订单成功")
       setIsProcessing(false)
       
-      setCurrentPaymentUrl(data.paymentUrl)
+      setCurrentPaymentUrl(data.paymentUrl || data.url)
       setCurrentOrderId(data.orderId)
       console.log("🔄 [DEBUG] 设置 showQRModal 为 true")
       setShowQRModal(true)

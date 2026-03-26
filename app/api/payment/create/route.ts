@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     const tradeOrderId = `${Date.now()}${Math.random().toString(36).substr(2, 8)}`
     console.log('订单ID:', tradeOrderId)
 
-    const params: Record<string, string> = {
+    const params: Record&lt;string, string&gt; = {
       appid: appId,
       trade_order_id: tradeOrderId,
       total_fee: '69.90',
@@ -68,24 +68,43 @@ export async function POST(request: NextRequest) {
     console.log('签名参数（排序后+hash）:', params)
 
     const queryString = Object.keys(params)
-      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
-      .join('&')
+      .map(key =&gt; `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+      .join('&amp;')
 
     const paymentUrl = `https://api.xunhupay.com/payment/do.html?${queryString}`
     console.log('✅ 支付URL生成成功:', paymentUrl)
 
-    return NextResponse.json({
-      success: true,
-      url: paymentUrl,
-      paymentUrl: paymentUrl,
-      orderId: tradeOrderId,
-      message: '支付链接生成成功'
+    console.log('📡 开始请求虎皮椒API...')
+    const response = await fetch(paymentUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
     })
+
+    console.log('📡 虎皮椒响应状态码:', response.status)
+    const responseText = await response.text()
+    console.log('📦 虎皮椒原始响应:', responseText)
+
+    let result
+    try {
+      result = JSON.parse(responseText)
+      console.log('✅ 虎皮椒JSON解析成功:', result)
+    } catch (e) {
+      console.error('❌ 虎皮椒返回的不是JSON:', responseText)
+      return NextResponse.json({
+        errcode: -1,
+        error: '虎皮椒返回格式错误'
+      }, { status: 500 })
+    }
+
+    console.log('🚀 原封不动返回虎皮椒响应')
+    return NextResponse.json(result)
 
   } catch (error) {
     console.error('💥 整个支付流程错误:', error)
     return NextResponse.json(
-      { error: '创建支付订单失败' },
+      { errcode: -1, error: '创建支付订单失败' },
       { status: 500 }
     )
   }
