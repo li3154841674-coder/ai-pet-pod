@@ -153,11 +153,13 @@ export default function AlipayQRModal({
   useEffect(() => {
     if (isMobile && paymentState === 'ready' && paymentUrl) {
       console.log('📱 检测到手机端，尝试跳转到支付宝App...')
+      console.log('🔗 支付URL:', paymentUrl)
       
-      // 支付宝App跳转协议
-      const alipayScheme = `alipays://platformapi/startapp?appId=09999988&actionType=toAccount&goBack=YES&amount=69.9&userId=2088102176120976&memo=观象高定宠物服装&paySuccessUrl=${encodeURIComponent(window.location.href)}`
+      // 支付宝App跳转协议（正确的支付协议）
+      const alipayScheme = `alipays://platformapi/startapp?appId=20000067&url=${encodeURIComponent(paymentUrl)}`
       
       // 尝试打开支付宝App
+      console.log('🚀 跳转到支付宝App:', alipayScheme)
       window.location.href = alipayScheme
       
       // 2秒后检查是否跳转成功
