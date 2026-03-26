@@ -779,7 +779,12 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
     }, 2000)
   }, [])
 
-  const handleContinueToQR = useCallback(async () =&gt; {
+  const handleContinueToQR = useCallback(async (e?: React.MouseEvent) =&gt; {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
     console.log("🎯 [DEBUG] handleContinueToQR 被调用")
     console.log("📋 [DEBUG] selectedPayment:", selectedPayment)
     
@@ -817,6 +822,10 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         console.log("🚀 [DEBUG] 执行 window.location.href 跳转...")
         window.location.href = data.url
         return
+      }
+
+      if (data.errcode !== 0) {
+        throw new Error(data.errmsg || data.error || "创建支付订单失败")
       }
 
       if (data.error || !data.success) {
