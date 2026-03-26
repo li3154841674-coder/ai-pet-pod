@@ -126,7 +126,6 @@ export default function AlipayQRModal({
 
   useEffect(() => {
     if (isOpen) {
-      // 直接使用传递的支付信息，不需要重新创建订单
       if (initialPaymentUrl && initialOrderId) {
         console.log('✅ 使用传递的支付信息:', {
           paymentUrl: initialPaymentUrl,
@@ -137,7 +136,6 @@ export default function AlipayQRModal({
         setPaymentState('ready')
         setPollingCount(0)
       } else {
-        // 如果没有传递支付信息，才创建新订单
         console.log('⚠️  没有传递支付信息，创建新订单...')
         createOrder()
       }
@@ -164,27 +162,66 @@ export default function AlipayQRModal({
   }, [])
 
   // 手机端自动跳转支付宝
-  useEffect(() => {
-    if (isMobile && paymentState === 'ready' && paymentUrl) {
-      console.log('📱 检测到手机端，尝试跳转到支付宝App...')
-      console.log('🔗 支付URL:', paymentUrl)
-      
-      // 支付宝App跳转协议（正确的支付协议）
-      const alipayScheme = `alipays://platformapi/startapp?appId=20000067&url=${encodeURIComponent(paymentUrl)}`
-      
-      // 尝试打开支付宝App
-      console.log('🚀 跳转到支付宝App:', alipayScheme)
+  const jumpToAlipay = useCallback(() => {
+    if (!paymentUrl) {
+      console.error('❌ 支付URL为空，无法跳转')
+      return
+    }
+
+    console.log('📱 检测到手机端，尝试跳转到支付宝App...')
+    console.log('🔗 支付URL:', paymentUrl)
+
+    // 支付宝App跳转协议（正确的支付协议）
+    const alipayScheme = `alipays://platformapi/startapp?appId=20000067&url=${encodeURIComponent(paymentUrl)}`
+    
+    // 尝试打开支付宝App
+    console.log('🚀 跳转到支付宝App:', alipayScheme)
+    
+    // 使用多种方式尝试跳转
+    const openAlipay = () => {
+      // 方式1：直接设置location.href
       window.location.href = alipayScheme
       
-      // 2秒后检查是否跳转成功
-      const checkJump = setTimeout(() => {
-        console.log('🔍 检查是否跳转成功...')
-        // 这里可以添加更复杂的跳转检测逻辑
-      }, 2000)
+      // 方式2：创建隐藏的iframe
+      setTimeout(() => {
+        const iframe = document.createElement('iframe')
+        iframe.style.display = 'none'
+        iframe.src = alipayScheme
+        document.body.appendChild(iframe)
+        setTimeout(() => {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe)
+          }
+        }, 1000)
+      }, 500)
       
-      return () => clearTimeout(checkJump)
+      // 方式3：创建隐藏的a标签并点击
+      setTimeout(() => {
+        const link = document.createElement('a')
+        link.href = alipayScheme
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        setTimeout(() => {
+          if (link.parentNode) {
+            link.parentNode.removeChild(link)
+          }
+        }, 1000)
+      }, 1000)
     }
-  }, [isMobile, paymentState, paymentUrl])
+    
+    openAlipay()
+  }, [paymentUrl])
+
+  useEffect(() => {
+    if (isMobile && paymentState === 'ready' && paymentUrl) {
+      const timer = setTimeout(() => {
+        jumpToAlipay()
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isMobile, paymentState, paymentUrl, jumpToAlipay])
 
   useEffect(() => {
     if (isOpen && paymentState === 'ready' && orderId) {
@@ -290,22 +327,49 @@ export default function AlipayQRModal({
         return (
           <>
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              请使用支付宝扫码支付
+              {isMobile ? '正在跳转到支付宝...' : '请使用支付宝扫码支付'}
             </h2>
             <p className="text-gray-500 text-sm mb-8">
               订单号: {orderId}
             </p>
 
-            <div className="inline-block mb-6">
-              <div className="p-4 bg-white rounded-2xl shadow-lg">
-                <QRCodeSVG
-                  value={paymentUrl}
-                  size={192}
-                  level="H"
-                  includeMargin={true}
-                />
+            {isMobile ? (
+              <>
+                <div className="flex flex-col items-center mb-6">
+                  <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                    <svg viewBox="0 0 24 24" className="w-12 h-12 text-blue-600">
+                      <defs>
+                        <linearGradient id="alipayGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#1677FF" />
+                          <stop offset="100%" stopColor="#0958DB" />
+                        </linearGradient>
+                      </defs>
+                      <path fill="url(#alipayGradient2)" d="M21.59 8.735a2.94 2.94 0 0 0-.6-1.153 2.84 2.84 0 0 0-1.098-.66A8.77 8.77 0 0 0 17.1 6.5c-1.14-.2-2.31-.3-3.49-.3-2.94 0-5.85.5-8.56 1.44-.38.13-.77.26-1.15.4A2.52 2.52 0 0 0 2.4 9.82a2.33 2.33 0 0 0 .57 2.16c.39.46.88.8 1.43 1.01.35.13.71.24 1.07.33.33.08.67.15 1.01.21.47.08.94.15 1.42.2a24.9 24.9 0 0 0 4.01.26c.55 0 1.1-.01 1.65-.04.35-.02.7-.04 1.04-.07l.96-.08a9.43 9.43 0 0 0 2.85-.69c.53-.24 1.04-.53 1.51-.87.25-.18.48-.37.7-.58a3.22 3.22 0 0 0 .98-1.51 2.7 2.7 0 0 0 .08-.74z"/>
+                    </svg>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-4">
+                    如未自动跳转，请点击下方按钮
+                  </p>
+                  <button
+                    onClick={jumpToAlipay}
+                    className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-lg shadow-lg shadow-blue-600/30"
+                  >
+                    立即打开支付宝
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="inline-block mb-6">
+                <div className="p-4 bg-white rounded-2xl shadow-lg">
+                  <QRCodeSVG
+                    value={paymentUrl}
+                    size={192}
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex items-center justify-center gap-2 mb-4">
               <motion.div
