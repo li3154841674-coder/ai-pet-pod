@@ -35,21 +35,22 @@ export async function POST(request: NextRequest) {
     })
 
     if (!appId || !appSecret || !gateway) {
-      console.warn('⚠️  虎皮椒支付凭证未配置，使用模拟模式')
-      
-      // 模拟模式：返回模拟的支付二维码
-      const tradeOrderId = `ORD${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`
-      
-      // 生成一个模拟的二维码URL（使用qrcode.react的逻辑）
-      const mockPaymentUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://cocoshop.art/pay/' + tradeOrderId)}`
-      
-      return NextResponse.json({
-        success: true,
-        paymentUrl: mockPaymentUrl,
-        orderId: tradeOrderId,
-        message: '支付链接生成成功（模拟模式）',
-        isMock: true
+      console.error('❌ 虎皮椒支付凭证未配置:', {
+        appId: !!appId,
+        appSecret: !!appSecret,
+        gateway: !!gateway
       })
+      return NextResponse.json(
+        { 
+          error: '虎皮椒支付凭证未配置',
+          details: {
+            hasAppId: !!appId,
+            hasAppSecret: !!appSecret,
+            hasGateway: !!gateway
+          }
+        },
+        { status: 500 }
+      )
     }
 
     console.log('✅ 环境变量检查通过')
