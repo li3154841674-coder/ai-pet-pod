@@ -27,6 +27,7 @@ export default function AlipayQRModal({
   const [orderId, setOrderId] = useState<string>('')
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [pollingCount, setPollingCount] = useState<number>(0)
+  const [isMobile, setIsMobile] = useState<boolean>(false)
   
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -134,6 +135,40 @@ export default function AlipayQRModal({
       cleanup()
     }
   }, [isOpen, createOrder])
+
+  // 检测是否为手机端
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
+      setIsMobile(isMobileDevice)
+    }
+
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
+
+  // 手机端自动跳转支付宝
+  useEffect(() => {
+    if (isMobile && paymentState === 'ready' && paymentUrl) {
+      console.log('📱 检测到手机端，尝试跳转到支付宝App...')
+      
+      // 支付宝App跳转协议
+      const alipayScheme = `alipays://platformapi/startapp?appId=09999988&actionType=toAccount&goBack=YES&amount=69.9&userId=2088102176120976&memo=观象高定宠物服装&paySuccessUrl=${encodeURIComponent(window.location.href)}`
+      
+      // 尝试打开支付宝App
+      window.location.href = alipayScheme
+      
+      // 2秒后检查是否跳转成功
+      const checkJump = setTimeout(() => {
+        console.log('🔍 检查是否跳转成功...')
+        // 这里可以添加更复杂的跳转检测逻辑
+      }, 2000)
+      
+      return () => clearTimeout(checkJump)
+    }
+  }, [isMobile, paymentState, paymentUrl])
 
   useEffect(() => {
     if (isOpen && paymentState === 'ready' && orderId) {
