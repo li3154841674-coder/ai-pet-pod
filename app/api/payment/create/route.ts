@@ -5,18 +5,18 @@ function generateNonceStr(): string {
   let result = ''
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   const charactersLength = characters.length
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i &lt; 16; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength))
   }
   return result
 }
 
-function generateSign(params: Record<string, string>, appSecret: string): string {
+function generateSign(params: Record&lt;string, string&gt;, appSecret: string): string {
   const sortedKeys = Object.keys(params).sort()
   
   const signString = sortedKeys
-    .map(key => `${key}=${params[key]}`)
-    .join('&') + appSecret
+    .map(key =&gt; `${key}=${params[key]}`)
+    .join('&amp;') + appSecret
   
   return crypto.createHash('md5').update(signString).digest('hex').toLowerCase()
 }
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     if (!appSecret) {
       console.error('❌ 虎皮椒密钥未配置')
       return NextResponse.json(
-        { error: '虎皮椒密钥未配置' },
+        { errcode: -1, error: '虎皮椒密钥未配置' },
         { status: 500 }
       )
     }
@@ -74,32 +74,12 @@ export async function POST(request: NextRequest) {
     const paymentUrl = `https://api.xunhupay.com/payment/do.html?${queryString}`
     console.log('✅ 支付URL生成成功:', paymentUrl)
 
-    console.log('📡 开始请求虎皮椒API...')
-    const response = await fetch(paymentUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
+    console.log('🚀 返回带 URL 的响应给前端')
+    return NextResponse.json({
+      errcode: 0,
+      url: paymentUrl,
+      orderId: tradeOrderId
     })
-
-    console.log('📡 虎皮椒响应状态码:', response.status)
-    const responseText = await response.text()
-    console.log('📦 虎皮椒原始响应:', responseText)
-
-    let result
-    try {
-      result = JSON.parse(responseText)
-      console.log('✅ 虎皮椒JSON解析成功:', result)
-    } catch (e) {
-      console.error('❌ 虎皮椒返回的不是JSON:', responseText)
-      return NextResponse.json({
-        errcode: -1,
-        error: '虎皮椒返回格式错误'
-      }, { status: 500 })
-    }
-
-    console.log('🚀 原封不动返回虎皮椒响应')
-    return NextResponse.json(result)
 
   } catch (error) {
     console.error('💥 整个支付流程错误:', error)
