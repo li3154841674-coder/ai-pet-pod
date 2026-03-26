@@ -78,11 +78,14 @@ export default function AlipayQRModal({
       const data = await response.json()
       console.log('📦 后端返回数据:', data)
 
-      if (!data.success) {
-        throw new Error(data.error || '创建支付订单失败')
+      if (data.errcode !== 0) {
+        throw new Error(data.errmsg || data.error || '创建支付订单失败')
       }
 
       const url = data.url || data.paymentUrl
+      if (!url) {
+        throw new Error('支付链接缺失')
+      }
       console.log('🔗 支付URL:', url)
 
       setPaymentUrl(url)

@@ -779,7 +779,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
     }, 2000)
   }, [])
 
-  const handleContinueToQR = useCallback(async (e?: React.MouseEvent) =&gt; {
+  const handleContinueToQR = useCallback(async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault()
       e.stopPropagation()
@@ -815,7 +815,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
 
       console.log("🔍 [DEBUG] 检查 errcode:", data.errcode)
       
-      if (data.errcode === 0 &amp;&amp; data.url) {
+      if (data.errcode === 0 && data.url) {
         console.log("✅ [DEBUG] 虎皮椒返回成功，准备跳转到:", data.url)
         setIsProcessing(false)
         
@@ -828,8 +828,8 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         throw new Error(data.errmsg || data.error || "创建支付订单失败")
       }
 
-      if (data.error || !data.success) {
-        throw new Error(data.error || "创建支付订单失败")
+      if (!data.url) {
+        throw new Error("支付链接缺失")
       }
 
       console.log("✅ [DEBUG] 创建订单成功")

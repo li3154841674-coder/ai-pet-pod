@@ -31,7 +31,11 @@ export async function GET(request: NextRequest) {
 
     const appId = process.env.XUNHU_APPID
     const appSecret = process.env.XUNHU_APPSECRET
-    const gateway = process.env.XUNHU_GATEWAY
+    // 查单接口与下单/收银台接口可能不同；优先使用专用环境变量
+    const gateway =
+      process.env.XUNHU_STATUS_GATEWAY ||
+      process.env.XUNHU_QUERY_GATEWAY ||
+      process.env.XUNHU_GATEWAY
 
     let orderStatus = 'pending'
     
