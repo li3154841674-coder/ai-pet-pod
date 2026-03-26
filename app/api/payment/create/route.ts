@@ -24,7 +24,19 @@ export async function POST(request: NextRequest) {
     const gateway = process.env.XUNHU_GATEWAY
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
+    console.log('环境变量检查:', {
+      hasAppId: !!appId,
+      hasAppSecret: !!appSecret,
+      hasGateway: !!gateway,
+      siteUrl
+    })
+
     if (!appId || !appSecret || !gateway) {
+      console.error('虎皮椒支付凭证未配置:', {
+        appId: !!appId,
+        appSecret: !!appSecret,
+        gateway: !!gateway
+      })
       return NextResponse.json(
         { error: '虎皮椒支付凭证未配置' },
         { status: 500 }
