@@ -23,8 +23,8 @@ export default function AlipayQRModal({
   onPaymentSuccess,
 }: AlipayQRModalProps) {
   const [paymentState, setPaymentState] = useState<PaymentState>('loading')
-  const [paymentUrl, setPaymentUrl] = useState<string>('')
-  const [orderId, setOrderId] = useState<string>('')
+  const [paymentUrl, setPaymentUrl] = useState<string>(initialPaymentUrl)
+  const [orderId, setOrderId] = useState<string>(initialOrderId)
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [pollingCount, setPollingCount] = useState<number>(0)
   const [isMobile, setIsMobile] = useState<boolean>(false)
@@ -126,7 +126,21 @@ export default function AlipayQRModal({
 
   useEffect(() => {
     if (isOpen) {
-      createOrder()
+      // 直接使用传递的支付信息，不需要重新创建订单
+      if (initialPaymentUrl && initialOrderId) {
+        console.log('✅ 使用传递的支付信息:', {
+          paymentUrl: initialPaymentUrl,
+          orderId: initialOrderId
+        })
+        setPaymentUrl(initialPaymentUrl)
+        setOrderId(initialOrderId)
+        setPaymentState('ready')
+        setPollingCount(0)
+      } else {
+        // 如果没有传递支付信息，才创建新订单
+        console.log('⚠️  没有传递支付信息，创建新订单...')
+        createOrder()
+      }
     } else {
       cleanup()
     }
@@ -134,7 +148,7 @@ export default function AlipayQRModal({
     return () => {
       cleanup()
     }
-  }, [isOpen, createOrder])
+  }, [isOpen, initialPaymentUrl, initialOrderId, createOrder])
 
   // 检测是否为手机端
   useEffect(() => {
