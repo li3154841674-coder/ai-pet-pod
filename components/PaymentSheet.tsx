@@ -806,6 +806,13 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         body: JSON.stringify({
           title: "观象高定宠物服装",
           totalFee: 69.9,
+          paymentMethod: selectedPayment,
+          shippingName: shippingData.name,
+          shippingPhone: shippingData.phone,
+          shippingAddress: shippingData.address,
+          tshirtColor,
+          generatedImageUrl: generatedImageUrl || "",
+          size: "M",
         }),
       })
 
@@ -815,29 +822,31 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
 
       console.log("🔍 [DEBUG] 检查 errcode:", data.errcode)
       
-      if (data.errcode === 0 && data.url) {
-        console.log("✅ [DEBUG] 虎皮椒返回成功，准备跳转到:", data.url)
-        setIsProcessing(false)
-        
-        console.log("🚀 [DEBUG] 执行 window.location.href 跳转...")
-        window.location.href = data.url
-        return
-      }
-
       if (data.errcode !== 0) {
-        throw new Error(data.errmsg || data.error || "创建支付订单失败")
+        const rawMsg = (data.errmsg || data.error || "").toString().trim()
+        const readableMsg = rawMsg && !rawMsg.includes("??") ? rawMsg : "支付通道暂不可用，请稍后重试或联系商家"
+        throw new Error(`创建支付订单失败（${data.errcode}）：${readableMsg}`)
       }
 
-      if (!data.url) {
+      const url = data.paymentUrl || data.url
+      if (!url) {
         throw new Error("支付链接缺失")
       }
 
       console.log("✅ [DEBUG] 创建订单成功")
       setIsProcessing(false)
-      
-      setCurrentPaymentUrl(data.paymentUrl || data.url)
+
+      const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+
+      if (isMobileDevice) {
+        console.log("🚀 [DEBUG] 移动端：跳转支付页面")
+        window.location.href = url
+        return
+      }
+
+      console.log("🖥️ [DEBUG] PC端：展示动态收款码")
+      setCurrentPaymentUrl(url)
       setCurrentOrderId(data.orderId)
-      console.log("🔄 [DEBUG] 设置 showQRModal 为 true")
       setShowQRModal(true)
 
     } catch (error) {

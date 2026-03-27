@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { X, AlertCircle } from "lucide-react"
 
 interface AlipayQRModalProps {
   isOpen: boolean
@@ -12,271 +12,21 @@ interface AlipayQRModalProps {
   onPaymentSuccess: () => void
 }
 
-type PaymentState = 'loading' | 'ready' | 'error' | 'timeout'
-
 export default function AlipayQRModal({
   isOpen,
   onClose,
-  paymentUrl: initialPaymentUrl,
-  orderId: initialOrderId,
+  paymentUrl,
+  orderId,
   onPaymentSuccess,
 }: AlipayQRModalProps) {
-  const [paymentState, setPaymentState] = useState<PaymentState>('loading')
-  const [paymentUrl, setPaymentUrl] = useState<string>('')
-  const [orderId, setOrderId] = useState<string>('')
-  const [errorMessage, setErrorMessage] = useState<string>('')
-  const [pollingCount, setPollingCount] = useState<number>(0)
-  
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const abortControllerRef = useRef<AbortController | null>(null)
-
-  const MAX_POLLING_COUNT = 20
-  const POLLING_INTERVAL = 3000
-  const REQUEST_TIMEOUT = 5000
-
-  const createOrder = useCallback(async () => {
-    console.log('🚀 创建支付订单...')
-    
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
-    abortControllerRef.current = new AbortController()
-
-    setPaymentState('loading')
-    setErrorMessage('')
-
-    try {
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutRef.current = setTimeout(() => {
-          reject(new Error('请求超时，请重试'))
-        }, REQUEST_TIMEOUT)
-      })
-
-      const responsePromise = fetch("/api/payment/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: "观象高定宠物服装",
-          totalFee: 69.9,
-        }),
-        signal: abortControllerRef.current.signal,
-      })
-
-      const response = await Promise.race([responsePromise, timeoutPromise]) as Response
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-
-      if (!response.ok) {
-        throw new Error(`请求失败: ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log('📦 后端返回数据:', data)
-
-      if (data.errcode !== 0) {
-        throw new Error(data.errmsg || data.error || '创建支付订单失败')
-      }
-
-      const url = data.url || data.paymentUrl
-      if (!url) {
-        throw new Error('支付链接缺失')
-      }
-      console.log('🔗 支付URL:', url)
-
-      setPaymentUrl(url)
-      setOrderId(data.orderId)
-      setPaymentState('ready')
-      setPollingCount(0)
-
-      console.log('🚀 立即跳转到支付页面...')
-      window.location.href = url
-
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        return
-      }
-      
-      console.error('❌ 创建支付订单错误:', error)
-      setErrorMessage(error instanceof Error ? error.message : '创建支付订单失败')
-      setPaymentState('error')
-    }
-  }, [])
-
-  const pollOrderStatus = useCallback(async () => {
-    if (!orderId) return
-
-    try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
-
-      const response = await fetch(`/api/payment/status?orderId=${encodeURIComponent(orderId)}`, {
-        signal: controller.signal,
-      })
-
-      clearTimeout(timeoutId)
-      const data = await response.json()
-
-      if (data.success && data.status === 'paid') {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current)
-        }
-        onPaymentSuccess()
-      }
-    } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
-        console.error('轮询订单状态错误:', error)
-      }
-    }
-  }, [orderId, onPaymentSuccess])
-
-  useEffect(() => {
-    if (isOpen) {
-      console.log('✅ 模态框打开，创建支付订单')
-      createOrder()
-    } else {
-      cleanup()
-    }
-
-    return () => {
-      cleanup()
-    }
-  }, [isOpen, createOrder])
-
-  useEffect(() => {
-    if (isOpen && paymentState === 'ready' && orderId) {
-      pollingIntervalRef.current = setInterval(() => {
-        setPollingCount(prev => {
-          const newCount = prev + 1
-          if (newCount >= MAX_POLLING_COUNT) {
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current)
-            }
-            setPaymentState('timeout')
-          }
-          return newCount
-        })
-        pollOrderStatus()
-      }, POLLING_INTERVAL)
-
-      return () => {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current)
-        }
-      }
-    }
-  }, [isOpen, paymentState, orderId, pollOrderStatus])
-
-  const cleanup = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current)
-    }
-    setPaymentState('loading')
-    setPollingCount(0)
-    setErrorMessage('')
-  }
-
-  const handleRetry = () => {
-    createOrder()
-  }
-
-  const handleRetryPayment = () => {
-    if (paymentUrl) {
-      console.log('🚀 重新跳转到支付页面...')
-      window.location.href = paymentUrl
-    } else {
-      createOrder()
-    }
-  }
+  const qrCodeUrl = useMemo(() => {
+    if (!paymentUrl) return ''
+    return `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(paymentUrl)}`
+  }, [paymentUrl])
 
   if (!isOpen) return null
 
-  const renderContent = () => {
-    switch (paymentState) {
-      case 'loading':
-        return (
-          <div className="flex flex-col items-center">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="w-16 h-16 mb-6"
-            >
-              <Loader2 className="w-16 h-16 text-blue-500" />
-            </motion.div>
-            <p className="text-gray-600 text-lg font-medium">正在生成支付链接...</p>
-          </div>
-        )
-
-      case 'error':
-        return (
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 mb-6 bg-red-100 rounded-full flex items-center justify-center">
-              <AlertCircle className="w-8 h-8 text-red-500" />
-            </div>
-            <p className="text-red-600 text-lg font-medium mb-2">生成失败</p>
-            <p className="text-gray-500 text-sm mb-6 text-center">{errorMessage}</p>
-            <button
-              onClick={handleRetry}
-              className="px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              重新生成
-            </button>
-          </div>
-        )
-
-      case 'timeout':
-        return (
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 mb-6 bg-yellow-100 rounded-full flex items-center justify-center">
-              <AlertCircle className="w-8 h-8 text-yellow-600" />
-            </div>
-            <p className="text-yellow-700 text-lg font-medium mb-2">等待超时</p>
-            <p className="text-gray-500 text-sm mb-6 text-center">
-              等待时间过长，请检查支付状态或重新生成
-            </p>
-            <button
-              onClick={handleRetry}
-              className="px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              重新生成
-            </button>
-          </div>
-        )
-
-      case 'ready':
-      default:
-        return (
-          <div className="flex flex-col items-center">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="w-16 h-16 mb-6"
-            >
-              <Loader2 className="w-16 h-16 text-blue-500" />
-            </motion.div>
-            <p className="text-gray-600 text-lg font-medium mb-6">正在跳转到支付宝...</p>
-            <button
-              onClick={handleRetryPayment}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-            >
-              重新跳转
-            </button>
-          </div>
-        )
-    }
-  }
+  const hasUrl = Boolean(paymentUrl)
 
   return (
     <AnimatePresence>
@@ -284,32 +34,70 @@ export default function AlipayQRModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.25 }}
         className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[200]"
         onClick={onClose}
       />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 320, damping: 28 }}
         className="fixed inset-0 z-[201] flex items-center justify-center pointer-events-none"
       >
-        <div 
-          className="pointer-events-auto relative"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-8 md:p-12 shadow-2xl max-w-sm mx-4">
+        <div className="pointer-events-auto relative" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-3xl p-8 shadow-2xl w-[92vw] max-w-md">
             <button
               onClick={onClose}
               className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              aria-label="关闭"
             >
               <X className="w-5 h-5 text-gray-600" />
             </button>
 
             <div className="text-center">
-              {renderContent()}
+              <h3 className="text-xl font-semibold text-gray-900">请扫码支付</h3>
+              <p className="mt-2 text-sm text-gray-500">请使用支付宝/微信扫码，金额以收银台显示为准</p>
+
+              {!hasUrl ? (
+                <div className="mt-8 rounded-2xl bg-red-50 border border-red-100 p-5 text-left">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-700">支付链接生成失败</p>
+                      <p className="text-xs text-red-600 mt-1">请关闭后重新点击“确认支付”</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="mt-6 flex justify-center">
+                    <div className="rounded-2xl border border-gray-200 p-3 bg-white">
+                      <img src={qrCodeUrl} alt="支付二维码" className="w-64 h-64 rounded-xl" />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 text-xs text-gray-500">
+                    订单号：<span className="font-mono">{orderId || '-'}</span>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <button
+                      onClick={onClose}
+                      className="py-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={onPaymentSuccess}
+                      className="py-3 rounded-xl bg-gray-900 text-white hover:bg-black transition-colors"
+                    >
+                      我已完成支付
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

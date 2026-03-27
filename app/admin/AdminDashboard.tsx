@@ -152,9 +152,9 @@ export default function AdminDashboard() {
                     const id = String(o.id ?? o.order_id ?? o.trade_order_id ?? '-')
                     const createdAt = o.created_at ?? o.createdAt ?? o.time ?? o.created
                     const pay = getPaymentStatus(o)
-                    const style = o.style ?? o.product_style ?? o.productName ?? o.title ?? '-'
-                    const size = o.size ?? o.product_size ?? o.tshirt_size ?? o.variant ?? '-'
-                    const name = o.shipping_name ?? o.name ?? o.receiver_name ?? o.shippingData?.name ?? '-'
+                    const style = o.style ?? o.product_style ?? o.tshirt_color ?? o.productName ?? o.title ?? '-'
+                    const size = o.size ?? o.product_size ?? o.tshirt_size ?? o.pet_size ?? o.variant ?? '-'
+                    const name = o.shipping_name ?? o.customer_name ?? o.name ?? o.receiver_name ?? o.shippingData?.name ?? '-'
                     const phone = o.shipping_phone ?? o.phone ?? o.receiver_phone ?? o.shippingData?.phone ?? '-'
                     const address = o.shipping_address ?? o.address ?? o.receiver_address ?? o.shippingData?.address ?? '-'
                     const hd = getHdImageUrl(o)

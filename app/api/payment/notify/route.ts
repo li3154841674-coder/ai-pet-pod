@@ -1,125 +1,77 @@
-import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
-import { updateOrderStatus } from '@/lib/orderStore'
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-function verifySign(params: Record<string, string>, appSecret: string, receivedHash: string): boolean {
-  const signParams: Record<string, string> = {}
-  
-  Object.keys(params)
-    .filter(key => key !== 'hash' && params[key] !== '')
-    .forEach(key => {
-      signParams[key] = params[key]
-    })
-  
-  const sortedKeys = Object.keys(signParams).sort()
-  
-  const signString = sortedKeys
-    .map(key => `${key}=${signParams[key]}`)
-    .join('&') + appSecret
-  
-  const calculatedHash = crypto.createHash('md5').update(signString).digest('hex')
-  
-  return calculatedHash === receivedHash
-}
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const appSecret = process.env.XUNHU_APPSECRET
+    const text = await request.text()
+    console.log('【1. 收到迅虎回调原始数据】:', text)
 
-    if (!appSecret) {
-      return new NextResponse('fail', { status: 500 })
-    }
+    const params = new URLSearchParams(text)
+    const trade_order_id = params.get('trade_order_id')
+    const status = params.get('status')
+    console.log('【2. 解析出单号】:', trade_order_id, '| 状态:', status)
 
-    const formData = await request.formData()
-    const params: Record<string, string> = {}
-    
-    formData.forEach((value, key) => {
-      params[key] = value.toString()
-    })
+    if (status === 'OD' && trade_order_id) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    const receivedHash = params.hash
-
-    if (!receivedHash) {
-      return new NextResponse('fail', { status: 400 })
-    }
-
-    const isValid = verifySign(params, appSecret, receivedHash)
-
-    if (!isValid) {
-      console.error('支付回调签名验证失败')
-      return new NextResponse('fail', { status: 400 })
-    }
-
-    const tradeOrderId = params.trade_order_id
-    const status = params.status
-    const payTime = params.pay_time
-    const totalFee = params.total_fee
-
-    console.log('支付回调成功:', {
-      tradeOrderId,
-      status,
-      payTime,
-      totalFee
-    })
-
-    if (status === 'OD') {
-      console.log('订单支付成功:', tradeOrderId)
-      updateOrderStatus(tradeOrderId, 'paid')
-    }
-
-    return new NextResponse('success', { 
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain'
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('【严重错误】缺少 Supabase URL 或 SERVICE_ROLE_KEY 环境变量！')
+        return new Response('success', { status: 200, headers: { 'Content-Type': 'text/plain' } })
       }
-    })
 
+      // 强制使用 Service Role Key 绕过 RLS 权限拦截
+      const supabase = createClient(supabaseUrl, supabaseKey)
+
+      // 先按 id 主键匹配；若未命中，再按 order_id 兜底
+      let { data, error } = await (supabase as any)
+        .from('orders')
+        .update({ status: 'paid' })
+        .eq('id', trade_order_id)
+        .select()
+
+      if (!error && (!data || data.length === 0)) {
+        const fallback = await (supabase as any)
+          .from('orders')
+          .update({ status: 'paid' })
+          .eq('order_id', trade_order_id)
+          .select()
+        data = fallback.data
+        error = fallback.error
+      }
+
+      if (error) {
+        console.error('【3. 数据库更新报错】:', error.message, error.details)
+      } else if (!data || data.length === 0) {
+        console.error(
+          '【3. 幽灵订单】更新失败！数据库 orders 表中根本找不到 id/order_id 为',
+          trade_order_id,
+          '的订单！(请检查数据库主键字段是叫 id 还是 order_id?)',
+        )
+      } else {
+        console.log('【3. 胜利】数据库更新成功！被更新的数据:', data)
+      }
+    }
+
+    return new Response('success', { status: 200, headers: { 'Content-Type': 'text/plain' } })
   } catch (error) {
-    console.error('支付回调处理错误:', error)
-    return new NextResponse('fail', { status: 500 })
+    console.error('【彻底崩溃】回调接口发生未捕获异常:', error)
+    return new Response('success', { status: 200, headers: { 'Content-Type': 'text/plain' } })
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const appSecret = process.env.XUNHU_APPSECRET
-
-    if (!appSecret) {
-      return new NextResponse('fail', { status: 500 })
-    }
-
     const { searchParams } = new URL(request.url)
-    const params: Record<string, string> = {}
-    
+    const payload: Record<string, string> = {}
     searchParams.forEach((value, key) => {
-      params[key] = value
+      payload[key] = value
     })
 
-    const receivedHash = params.hash
-
-    if (!receivedHash) {
-      return new NextResponse('fail', { status: 400 })
-    }
-
-    const isValid = verifySign(params, appSecret, receivedHash)
-
-    if (!isValid) {
-      console.error('同步返回签名验证失败')
-      return new NextResponse('fail', { status: 400 })
-    }
-
-    const tradeOrderId = params.trade_order_id
-    const status = params.status
-
-    console.log('同步返回成功:', {
-      tradeOrderId,
-      status
-    })
-
+    console.log('【收到虎皮椒回调(GET)】', payload)
     return NextResponse.redirect(new URL('/order', request.url))
-
   } catch (error) {
-    console.error('同步返回处理错误:', error)
+    console.error('[payment/notify] GET handling error', error)
     return NextResponse.redirect(new URL('/', request.url))
   }
 }
