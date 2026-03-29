@@ -2,10 +2,6 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import HeroScroll from "@/components/HeroScroll"
-import AppleStickyFeatures from "@/components/AppleStickyFeatures"
-import AppleImageShowcase from "@/components/AppleImageShowcase"
-import AIDetailShowcase from "@/components/AIDetailShowcase"
 import InteractiveUpload from "@/components/InteractiveUpload"
 import MockupPreview from "@/components/MockupPreview"
 import OrderFinder from "@/components/OrderFinder"
@@ -174,11 +170,90 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden">
-      <HeroScroll />
-      <AppleStickyFeatures />
-      <AppleImageShowcase />
-      <AIDetailShowcase />
+    <main className="min-h-screen overflow-x-hidden bg-zinc-50">
+      <section className="py-20 md:py-28">
+        <div className="mx-auto w-full md:max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, margin: "-50px" }}
+            className="px-6 md:px-0"
+          >
+            <img
+              src="/images/116840015ec8c4e3bd8476d1833f21a5.jpg"
+              alt="白 T 恤展示图"
+              className="w-full h-auto object-cover rounded-none md:rounded-lg"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, margin: "-50px" }}
+            className="px-6 py-8 md:px-0 md:py-10"
+          >
+            <h2 className="mb-3 text-xl md:text-2xl font-semibold text-zinc-900 tracking-wide">白 T 恤 · 经典版型</h2>
+            <p className="text-zinc-500 leading-relaxed">精选长绒棉，上身挺括，亲肤透气。</p>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-24">
+        <div className="mx-auto w-full md:max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, margin: "-50px" }}
+            className="px-6 md:px-0"
+          >
+            <img
+              src="/images/detail-ai-main.jpg.png"
+              alt="比格犬插画图"
+              className="w-full h-auto object-cover rounded-none md:rounded-lg"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, margin: "-50px" }}
+            className="px-6 py-8 md:px-0 md:py-10"
+          >
+            <h2 className="mb-3 text-xl md:text-2xl font-semibold text-zinc-900 tracking-wide">比格犬插画 · 灵动神态</h2>
+            <p className="text-zinc-500 leading-relaxed">复古矢向量感，新年氛围，情感共鸣。</p>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-24">
+        <div className="mx-auto w-full md:max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, margin: "-50px" }}
+            className="px-6 md:px-0"
+          >
+            <img
+              src="/images/detail-ai-sub1.jpg.png"
+              alt="刺绣细节图"
+              className="w-full h-auto object-cover rounded-none md:rounded-lg"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, margin: "-50px" }}
+            className="px-6 py-8 md:px-0 md:py-10"
+          >
+            <h2 className="mb-3 text-xl md:text-2xl font-semibold text-zinc-900 tracking-wide">刺绣细节 · 精致触感</h2>
+            <p className="text-zinc-500 leading-relaxed">高密度绣线，立体饱满，匠心工艺。</p>
+          </motion.div>
+        </div>
+      </section>
 
       {!isLoading && !generatedImageUrl && (
         <section className="py-12 md:py-20 bg-gray-50">
