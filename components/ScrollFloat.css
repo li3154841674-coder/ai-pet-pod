@@ -1,0 +1,12 @@
+/* ScrollFloat component styles */
+
+/* Note: Font size is controlled via Tailwind class names, not here */
+
+.scroll-float-container {
+  display: inline-block;
+}
+
+.scroll-float-container span {
+  display: inline-block;
+  line-height: 1.4;
+}

@@ -118,7 +118,7 @@ export default function MockupPreview({
   }
 
   return (
-    <section className="py-8 md:py-16 bg-white">
+    <section className="py-8 md:py-16 bg-transparent">
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -127,7 +127,7 @@ export default function MockupPreview({
           viewport={{ once: true }}
           className="text-center mb-8 md:mb-12"
         >
-          <h2 className="text-xl md:text-3xl font-light tracking-tight text-gray-900">
+          <h2 className="text-xl md:text-3xl font-light tracking-tight text-white">
             预览你的定制
           </h2>
         </motion.div>
@@ -148,7 +148,7 @@ export default function MockupPreview({
                     className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${
                       activeView === 'preview'
                         ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                        : 'text-gray-300 hover:text-white'
                     }`}
                   >
                     产品预览
@@ -158,7 +158,7 @@ export default function MockupPreview({
                     className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${
                       activeView === 'compare'
                         ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                        : 'text-gray-300 hover:text-white'
                     }`}
                   >
                     原图对照
@@ -175,7 +175,7 @@ export default function MockupPreview({
             >
               {activeView === 'preview' || isGenerating ? (
                 <div className="relative">
-                  <div className="relative aspect-square md:aspect-[3/4] bg-[#FAFAF8] rounded-3xl overflow-hidden">
+                  <div className="relative aspect-square md:aspect-[3/4] bg-transparent rounded-3xl overflow-hidden">
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-full h-full relative">
                         <img
@@ -209,7 +209,7 @@ export default function MockupPreview({
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-                          className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/75 backdrop-blur-3xl"
+                          className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-transparent backdrop-blur-3xl"
                         >
                           <AnimatePresence mode="wait">
                             {!isRevealing ? (
@@ -321,11 +321,11 @@ export default function MockupPreview({
                     transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
                     viewport={{ once: true }}
                   >
-                    <Card className="p-3 md:p-6 border-0 shadow-sm">
-                      <h3 className="text-xs font-medium text-center mb-3 md:mb-4 text-gray-500 tracking-wide uppercase">
+                    <Card className="p-3 md:p-6 border-0 shadow-sm bg-transparent">
+                      <h3 className="text-xs font-medium text-center mb-3 md:mb-4 text-gray-300 tracking-wide uppercase">
                         原始照片
                       </h3>
-                      <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden">
+                      <div className="aspect-square bg-transparent rounded-2xl overflow-hidden">
                         <img
                           src={originalImageUrl || ""}
                           alt="Original Pet Photo"
@@ -340,11 +340,11 @@ export default function MockupPreview({
                     transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
                     viewport={{ once: true }}
                   >
-                    <Card className="p-3 md:p-6 border-0 shadow-sm">
-                      <h3 className="text-xs font-medium text-center mb-3 md:mb-4 text-gray-500 tracking-wide uppercase">
+                    <Card className="p-3 md:p-6 border-0 shadow-sm bg-transparent">
+                      <h3 className="text-xs font-medium text-center mb-3 md:mb-4 text-gray-300 tracking-wide uppercase">
                         AI 渲染效果
                       </h3>
-                      <div className="aspect-square bg-white rounded-2xl overflow-hidden">
+                      <div className="aspect-square bg-transparent rounded-2xl overflow-hidden">
                         <img
                           src={generatedImageUrl || ""}
                           alt="AI Generated Pet"
@@ -364,13 +364,13 @@ export default function MockupPreview({
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
                 className="text-center"
               >
-                <h3 className="text-xl font-light tracking-tight text-gray-900">
+                <h3 className="text-xl font-light tracking-tight text-white">
                   专属定制 T 恤
                 </h3>
-                <p className="text-gray-500 mt-1 text-sm">
+                <p className="text-gray-300 mt-1 text-sm">
                   你的宠物，独一无二的设计
                 </p>
-                <p className="text-2xl font-light text-gray-900 mt-4">
+                <p className="text-2xl font-light text-white mt-4">
                   ¥69.9
                 </p>
               </motion.div>
@@ -380,7 +380,7 @@ export default function MockupPreview({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
               >
-                <p className="text-xs font-medium text-gray-500 mb-3 text-center tracking-wide uppercase">
+                <p className="text-xs font-medium text-gray-300 mb-3 text-center tracking-wide uppercase">
                   选择尺码
                 </p>
                 <div className="flex gap-2 justify-center">
@@ -393,8 +393,8 @@ export default function MockupPreview({
                       onClick={() => setSelectedSize(size)}
                       className={`w-12 h-12 rounded-full text-sm font-medium transition-all duration-300 ${
                         selectedSize === size
-                          ? 'bg-gray-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                       }`}
                     >
                       {size}
@@ -413,19 +413,19 @@ export default function MockupPreview({
               className="space-y-5"
             >
               <div>
-                <h3 className="text-2xl font-light tracking-tight text-gray-900">
+                <h3 className="text-2xl font-light tracking-tight text-white">
                   专属定制 T 恤
                 </h3>
-                <p className="text-gray-500 mt-2">
+                <p className="text-gray-300 mt-2">
                   你的宠物，独一无二的设计
                 </p>
-                <p className="text-3xl font-light text-gray-900 mt-5">
+                <p className="text-3xl font-light text-white mt-5">
                   ¥69.9
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-3 tracking-wide uppercase">
+                <p className="text-xs font-medium text-gray-300 mb-3 tracking-wide uppercase">
                   选择尺码
                 </p>
                 <div className="flex gap-2">
@@ -438,8 +438,8 @@ export default function MockupPreview({
                       onClick={() => setSelectedSize(size)}
                       className={`w-12 h-12 rounded-full text-sm font-medium transition-all duration-300 ${
                         selectedSize === size
-                          ? 'bg-gray-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                       }`}
                     >
                       {size}
@@ -462,7 +462,7 @@ export default function MockupPreview({
                 onClick={() => router.push('/order')}
                 onMouseEnter={() => setIsHoveringOrder(true)}
                 onMouseLeave={() => setIsHoveringOrder(false)}
-                className="w-full h-11 text-sm font-medium bg-white border-2 border-gray-200 hover:border-gray-300 rounded-full transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group"
+                className="w-full h-11 text-sm font-medium bg-gray-800 border-2 border-gray-700 hover:border-gray-600 rounded-full transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group"
               >
                 <motion.div
                   animate={{ rotate: isHoveringOrder ? 360 : 0 }}
@@ -473,13 +473,13 @@ export default function MockupPreview({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </motion.div>
-                <span className="text-gray-700 group-hover:text-gray-900 transition-colors">
+                <span className="text-gray-300 group-hover:text-white transition-colors">
                   订单中心
                 </span>
                 <motion.svg
                   animate={{ x: isHoveringOrder ? 4 : 0 }}
                   transition={{ duration: 0.3 }}
-                  className="w-4 h-4 text-gray-400"
+                  className="w-4 h-4 text-gray-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -500,7 +500,7 @@ export default function MockupPreview({
           </div>
         </div>
 
-        <div className="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 px-5 py-3.5 z-50">
+        <div className="lg:hidden fixed bottom-0 left-0 w-full bg-transparent border-t border-gray-100 px-5 py-3.5 z-50">
           <motion.div
             initial={{ y: 100 }}
             animate={{ y: 0 }}
@@ -509,11 +509,11 @@ export default function MockupPreview({
           >
             <div>
               <p className="text-xs text-gray-400">售价</p>
-              <p className="text-lg font-light text-gray-900">¥69.9</p>
+              <p className="text-lg font-light text-white">¥69.9</p>
             </div>
             <div className="flex gap-2">
               <Button
-                className="h-10 text-sm font-medium bg-white border border-gray-200 text-gray-700 rounded-full px-4"
+                className="h-10 text-sm font-medium bg-gray-800 border border-gray-700 text-gray-300 rounded-full px-4"
                 onClick={() => router.push('/order')}
               >
                 订单
