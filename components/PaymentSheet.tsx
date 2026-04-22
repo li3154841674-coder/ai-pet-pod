@@ -700,6 +700,10 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
     return () => window.removeEventListener('resize', checkIsMobile)
   }, [])
 
+  useEffect(() => {
+    console.log('🔍 [自检环节 1 - UI状态变动] 当前内存中的支付方式已变为:', selectedPayment)
+  }, [selectedPayment])
+
   const formatPhone = useCallback((value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 11)
     if (digits.length <= 3) return digits
@@ -797,57 +801,59 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
     setIsProcessing(true)
 
     try {
-      console.log("🚀 [DEBUG] 开始请求 /api/payment/create")
+      console.log('🔍 [自检环节 2 - 准备发包] 即将调用的状态:', selectedPayment)
+      const requestBody = {
+        title: "观象高定宠物服装",
+        totalFee: 69.9,
+        paymentMethod: selectedPayment,
+        shippingName: shippingData.name,
+        shippingPhone: shippingData.phone,
+        shippingAddress: shippingData.address,
+        tshirtColor,
+        generatedImageUrl: generatedImageUrl || "",
+        size: "M",
+      }
+      console.log('📦 [自检环节 2 - 实际发送的 Body]:', JSON.stringify(requestBody))
+
       const response = await fetch("/api/payment/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title: "观象高定宠物服装",
-          totalFee: 69.9,
-          paymentMethod: selectedPayment,
-          shippingName: shippingData.name,
-          shippingPhone: shippingData.phone,
-          shippingAddress: shippingData.address,
-          tshirtColor,
-          generatedImageUrl: generatedImageUrl || "",
-          size: "M",
-        }),
+        body: JSON.stringify(requestBody),
       })
 
-      console.log("📡 [DEBUG] 收到响应，状态码:", response.status)
-      const data = await response.json()
-      console.log("📦 [DEBUG] 响应数据:", data)
+      const result = await response.json()
+      console.log('📥 [自检环节 3 - 后端返回数据]:', result)
 
-      console.log("🔍 [DEBUG] 检查 errcode:", data.errcode)
-      
-      if (data.errcode !== 0) {
-        const rawMsg = (data.errmsg || data.error || "").toString().trim()
+      if (result.errcode !== 0) {
+        const rawMsg = (result.errmsg || result.error || "").toString().trim()
         const readableMsg = rawMsg && !rawMsg.includes("??") ? rawMsg : "支付通道暂不可用，请稍后重试或联系商家"
-        throw new Error(`创建支付订单失败（${data.errcode}）：${readableMsg}`)
+        throw new Error(`创建支付订单失败（${result.errcode}）：${readableMsg}`)
       }
 
-      const url = data.paymentUrl || data.url
-      if (!url) {
+      const targetUrl = result.url || result.paymentUrl
+      if (!targetUrl) {
         throw new Error("支付链接缺失")
       }
 
-      console.log("✅ [DEBUG] 创建订单成功")
       setIsProcessing(false)
 
-      const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+      const isMobileDevice = typeof window !== 'undefined' && (/Mobi|Android|iPhone/i.test(navigator.userAgent) || window.innerWidth <= 768)
 
-      if (isMobileDevice) {
-        console.log("🚀 [DEBUG] 移动端：跳转支付页面")
-        window.location.href = url
-        return
+      console.log(`🚦 [路由分流判断] 设备是否手机: ${isMobileDevice}, 支付方式: ${selectedPayment}`)
+
+      if (isMobileDevice && selectedPayment === 'alipay') {
+        // 【放行】仅限手机端 + 支付宝：直接跳转页面，唤醒支付宝 APP
+        console.log('✅ [执行动作] 手机端支付宝 -> 直接跳转')
+        window.location.href = targetUrl
+      } else {
+        // 【拦截】手机端微信、PC端微信、PC端支付宝：统统原地弹二维码！
+        console.log('✅ [执行动作] 其他情况 -> 弹出二维码 Modal')
+        setCurrentPaymentUrl(targetUrl)
+        setCurrentOrderId(result.orderId)
+        setShowQRModal(true)
       }
-
-      console.log("🖥️ [DEBUG] PC端：展示动态收款码")
-      setCurrentPaymentUrl(url)
-      setCurrentOrderId(data.orderId)
-      setShowQRModal(true)
 
     } catch (error) {
       console.error("❌ [DEBUG] 创建支付订单错误:", error)
@@ -858,7 +864,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         variant: "destructive",
       })
     }
-  }, [selectedPayment, toast])
+  }, [selectedPayment, shippingData.name, shippingData.phone, shippingData.address, tshirtColor, generatedImageUrl, toast])
 
   const handlePaymentSuccess = useCallback(() => {
     setShowQRModal(false)
@@ -940,6 +946,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
     <>
       <AnimatePresence>
         <motion.div
+          key="payment-sheet-backdrop"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -949,6 +956,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         />
 
         <motion.div
+          key="payment-sheet-container"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -1025,6 +1033,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         onClose={() => setShowQRModal(false)}
         paymentUrl={currentPaymentUrl}
         orderId={currentOrderId}
+        paymentMethod={selectedPayment || "alipay"}
         onPaymentSuccess={handlePaymentSuccess}
       />
     </>

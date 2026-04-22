@@ -1,10 +1,11 @@
 "use client"
 
 import { useCallback, useState, useEffect } from "react"
-import { useDropzone } from "react-dropzone"
+import { useDropzone, type FileRejection } from "react-dropzone"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { useToast } from "@/components/ui/toast"
 import { Upload, Sparkles, Wand2, Image as ImageIcon } from "lucide-react"
 
 interface InteractiveUploadProps {
@@ -25,6 +26,25 @@ export default function InteractiveUpload({
   const [isHovered, setIsHovered] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [progress, setProgress] = useState(0)
+  const { toast } = useToast()
+
+  const onDropRejected = useCallback(
+    (fileRejections: FileRejection[]) => {
+      const firstError = fileRejections[0]?.errors?.[0]
+      const message = firstError?.code === "file-invalid-type"
+        ? "仅支持图片文件上传"
+        : firstError?.code === "too-many-files"
+        ? "一次只能上传一张图片"
+        : "文件不符合上传要求，请更换后重试"
+
+      toast({
+        title: "上传失败",
+        description: message,
+        variant: "destructive",
+      })
+    },
+    [toast]
+  )
 
   useEffect(() => {
     if (isLoading) {
@@ -52,18 +72,59 @@ export default function InteractiveUpload({
   }, [isLoading])
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      if (acceptedFiles.length > 0 && !isLoading) {
-        onUpload(acceptedFiles[0])
+    (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+      if (isLoading) return
+
+      if (fileRejections.length > 0) {
+        const firstError = fileRejections[0]?.errors?.[0]
+        let description = "请上传有效的图片文件（支持常见图片格式）。"
+
+        if (firstError?.code === "file-too-large") {
+          description = "图片过大，请压缩后重试。"
+        } else if (firstError?.code === "file-invalid-type") {
+          description = "不支持该文件类型，请上传图片文件。"
+        } else if (firstError?.code === "too-many-files") {
+          description = "一次只能上传一张图片。"
+        }
+
+        toast({
+          title: "上传失败",
+          description,
+          variant: "destructive",
+        })
+        return
       }
+
+      if (acceptedFiles.length === 0) return
+
+      const file = acceptedFiles[0]
+      const fileType = (file.type || "").toLowerCase()
+      const fileName = (file.name || "").toLowerCase()
+      const isHeicLike =
+        fileType.includes("heic") ||
+        fileType.includes("heif") ||
+        fileName.endsWith(".heic") ||
+        fileName.endsWith(".heif")
+
+      if (isHeicLike) {
+        toast({
+          title: "已识别 HEIC/HEIF 图片",
+          description:
+            "部分浏览器对 HEIC/HEIF 预览兼容性有限。如显示异常，建议先转换为 JPG/PNG 后再上传。",
+        })
+      }
+
+      onUpload(file)
     },
-    [onUpload, isLoading]
+    [onUpload, isLoading, toast]
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected,
+    // 允许所有图片 MIME，避免仅限少数扩展名
     accept: {
-      "image/*": [".jpeg", ".jpg", ".png", ".webp"],
+      "image/*": [],
     },
     maxFiles: 1,
     disabled: isLoading,
@@ -155,16 +216,20 @@ export default function InteractiveUpload({
 
             <div className="relative z-10">
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
-                <Upload className="w-10 h-10 text-gray-600" />
+                <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-14 h-14" aria-hidden="true">
+                  <rect width="200" height="200" fill="#ffffff" />
+                  <path d="M100 10 L173.2 105 L26.8 105 Z M100 190 L26.8 95 L173.2 95 Z" fill="none" stroke="#000000" strokeWidth="1.5" />
+                </svg>
               </div>
-              <p className="text-xl font-semibold text-gray-900 mb-2">
-                {isDragActive
-                  ? "松开上传图片"
-                  : "点击或拖拽上传宠物照片"}
-              </p>
-              <p className="text-gray-500">
-                支持 JPG, PNG, WEBP 格式
-              </p>
+              <motion.div
+                animate={{ boxShadow: ["0 0 0 rgba(212,175,55,0.08)", "0 0 14px rgba(212,175,55,0.22)", "0 0 0 rgba(212,175,55,0.08)"] }}
+                transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+                className="inline-flex rounded-full border border-amber-200/70 px-6 py-2"
+              >
+                <p className="text-xl font-semibold text-gray-900 tracking-wide [text-shadow:_1px_1px_3px_rgba(33,33,33,0.15)]">
+转动星盘
+                </p>
+              </motion.div>
             </div>
           </div>
         </Card>
