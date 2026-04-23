@@ -48,28 +48,23 @@ export default function Home() {
         image.onerror = () => reject(new Error("图片加载失败"))
         image.src = imageUrl
       })
-
       const canvas = document.createElement("canvas")
       canvas.width = img.width
       canvas.height = img.height
       const ctx = canvas.getContext("2d")
       if (!ctx) return null
-
       ctx.drawImage(img, 0, 0)
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       const data = imageData.data
-
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i]
         const g = data[i + 1]
         const b = data[i + 2]
         if (r > 245 && g > 245 && b > 245) data[i + 3] = 0
       }
-
       ctx.putImageData(imageData, 0, 0)
       return canvas.toDataURL("image/png")
-    } catch (error) {
-      console.warn("[Matting] 白底剔除失败，回退原图：", error)
+    } catch {
       return null
     }
   }
@@ -89,30 +84,24 @@ export default function Home() {
     try {
       const originalUrl = URL.createObjectURL(file)
       setOriginalImageUrl(originalUrl)
-
       const base64Image = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = (e) => resolve(e.target?.result as string)
         reader.onerror = () => reject(new Error("图片读取失败"))
         reader.readAsDataURL(file)
       })
-
       progressInterval = setInterval(() => {
         setProgress((prev) => Math.min(prev + Math.random() * 5, 95))
       }, 200)
-
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: base64Image }),
       })
-
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data?.error || "AI 生成失败，请稍后重试")
-
       const resultUrl = data?.imageUrl || data?.url
       if (!resultUrl) throw new Error("AI 未返回图片地址")
-
       const mattedUrl = await removeWhiteBackground(resultUrl)
       setGeneratedImageUrl(mattedUrl || resultUrl)
       setProgress(100)
