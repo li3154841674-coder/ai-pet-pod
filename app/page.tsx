@@ -29,6 +29,7 @@ const mysticLines = [
 ]
 
 export default function Home() {
+  // 🚀 Locked to ai-pet-pod target: 终极部署
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null)
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
