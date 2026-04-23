@@ -39,15 +39,15 @@ Technical Requirements (Crucial for Printing): The subject must be completely is
     const pickedTarot = tarotCharacters[Math.floor(Math.random() * tarotCharacters.length)];
     const finalPrompt = brandPrompt.replaceAll("[RANDOM_TAROT_CHARACTER]", pickedTarot);
 
-    // 2. 按 OpenAI 兼容格式构造请求体
+    // 2. 按官方文档重构请求体
     const targetUrl = "https://ai.comfly.chat/v1/images/generations";
     const requestPayload = {
-      model: "gemini-3.1-flash-image-preview",
+      model: "gpt-image-2",
       prompt: finalPrompt,
-      image,
-      n: 1,
-      size: "1024x1024"
+      size: "1024x1024",
+      image: [image],
     };
+    console.log("📦 最终 Payload:", JSON.stringify(requestPayload, null, 2));
     const requestBody = JSON.stringify(requestPayload);
 
     // 3. 按照原有的逻辑发送 fetch 请求到 https://ai.comfly.chat/v1/images/generations
@@ -73,7 +73,9 @@ Technical Requirements (Crucial for Printing): The subject must be completely is
 
     if (!response.ok) {
       const rawError = await response.text();
-      console.log("🚨 [Debug] Raw Error from Server:", rawError);
+      console.error("🚨 [AI 生成失败] 非 2xx 响应");
+      console.error("status:", response.status, response.statusText);
+      console.error("rawError:", rawError);
 
       let parsedError: any = {};
       try {
@@ -82,8 +84,9 @@ Technical Requirements (Crucial for Printing): The subject must be completely is
         parsedError = {};
       }
 
-      console.error("❌ 第三方 API 调用失败:", parsedError);
-      return NextResponse.json({ error: parsedError?.error?.message || "AI 画师正在摸鱼，请稍后再试" }, { status: response.status });
+      console.error("parsedError:", parsedError);
+      console.error("requestPayload:", { ...requestPayload, image: typeof image === "string" ? `[base64:${image.length}]` : typeof image });
+      return NextResponse.json({ error: parsedError?.error?.message || parsedError?.error || rawError || "AI 画师正在摸鱼，请稍后再试" }, { status: response.status });
     }
 
     const data = await response.json();
@@ -93,6 +96,8 @@ Technical Requirements (Crucial for Printing): The subject must be completely is
 
     if (!newImageUrl) {
       console.error("❌ 未能获取到图片 URL");
+      console.error("response data:", data);
+      console.error("requestPayload:", { ...requestPayload, image: typeof image === "string" ? `[base64:${image.length}]` : typeof image });
       return NextResponse.json({ error: "未能获取到生成的图片，请重试" }, { status: 500 });
     }
 
@@ -110,9 +115,12 @@ Technical Requirements (Crucial for Printing): The subject must be completely is
     console.error("=" .repeat(60));
     console.error("💥 生成接口发生异常");
     console.error("=" .repeat(60));
-    const err = error as Error & { code?: string }
+    const err = error as Error & { code?: string; cause?: unknown }
+    console.error("error.name:", err?.name || "Unknown")
     console.error("error.message:", err?.message || "Unknown error")
     console.error("error.stack:", err?.stack || "No stack")
+    console.error("error.code:", err?.code || "No code")
+    console.error("error.cause:", err?.cause || "No cause")
     if (err?.message?.includes("ECONNREFUSED") || err?.code === "ECONNREFUSED") {
       console.error("⚠️ 检测到 ECONNREFUSED，可能存在代理/本地网络拦截或目标端口不可达")
     }
