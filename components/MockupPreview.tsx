@@ -461,37 +461,6 @@ export default function MockupPreview({
                 确认定制并支付
               </Button>
 
-              <motion.button
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => router.push('/order')}
-                onMouseEnter={() => setIsHoveringOrder(true)}
-                onMouseLeave={() => setIsHoveringOrder(false)}
-                className="w-full h-11 text-sm font-medium bg-gray-800 border-2 border-gray-700 hover:border-gray-600 rounded-full transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden group"
-              >
-                <motion.div
-                  animate={{ rotate: isHoveringOrder ? 360 : 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="w-5 h-5 flex items-center justify-center"
-                >
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                </motion.div>
-                <span className="text-gray-300 group-hover:text-white transition-colors">
-                  订单中心
-                </span>
-                <motion.svg
-                  animate={{ x: isHoveringOrder ? 4 : 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-4 h-4 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </motion.svg>
-              </motion.button>
 
               <div className="pt-4 border-t border-gray-100">
                 <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
