@@ -9,14 +9,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "请上传宠物图片" }, { status: 400 });
     }
 
-    const apiKey = process.env.COMFLY_API_KEY || process.env.OPENAI_API_KEY;
+    const apiKey =
+      process.env.COMFLY_API_KEY ||
+      process.env.OPENAI_API_KEY ||
+      process.env.NEXT_PUBLIC_COMFLY_API_KEY ||
+      process.env.NEXT_PUBLIC_OPENAI_API_KEY;
     console.log("🔍 环境变量检查:");
     console.log("  - COMFLY_API_KEY 是否存在:", !!process.env.COMFLY_API_KEY);
     console.log("  - OPENAI_API_KEY 是否存在:", !!process.env.OPENAI_API_KEY);
+    console.log("  - NEXT_PUBLIC_COMFLY_API_KEY 是否存在:", !!process.env.NEXT_PUBLIC_COMFLY_API_KEY);
+    console.log("  - NEXT_PUBLIC_OPENAI_API_KEY 是否存在:", !!process.env.NEXT_PUBLIC_OPENAI_API_KEY);
     console.log("Key Loaded Length:", apiKey?.length || 0);
 
     if (!apiKey) {
-      return NextResponse.json({ error: "API Key 未配置，请在 Vercel 后台设置 COMFLY_API_KEY 或 OPENAI_API_KEY" }, { status: 500 });
+      return NextResponse.json({ error: "API Key 未配置，请在 Vercel 后台设置 COMFLY_API_KEY / OPENAI_API_KEY / NEXT_PUBLIC_COMFLY_API_KEY / NEXT_PUBLIC_OPENAI_API_KEY" }, { status: 500 });
     }
 
     // 强制清理可能干扰 HTTPS 直连的代理环境变量
@@ -48,6 +54,13 @@ Technical Requirements (Crucial for Printing): The subject must be completely is
       image: [image],
     };
     console.log("📦 最终 Payload:", JSON.stringify(requestPayload, null, 2));
+    console.log("🔑 命中的 Key 来源:",
+      process.env.COMFLY_API_KEY ? "COMFLY_API_KEY" :
+      process.env.OPENAI_API_KEY ? "OPENAI_API_KEY" :
+      process.env.NEXT_PUBLIC_COMFLY_API_KEY ? "NEXT_PUBLIC_COMFLY_API_KEY" :
+      process.env.NEXT_PUBLIC_OPENAI_API_KEY ? "NEXT_PUBLIC_OPENAI_API_KEY" :
+      "NONE"
+    );
     const requestBody = JSON.stringify(requestPayload);
 
     // 3. 按照原有的逻辑发送 fetch 请求到 https://ai.comfly.chat/v1/images/generations
