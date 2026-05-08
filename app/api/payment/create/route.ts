@@ -27,6 +27,8 @@ function generateNonceStr(): string {
 function generateSign(params: Record<string, string>, appSecret: string): string {
  const sortedKeys = Object.keys(params).sort()
  const signString = sortedKeys.map((key) => `${key}=${params[key]}`).join('&') + appSecret
+ console.log('传入的 AppID:', params.appid)
+ console.log('准备进行加密签名的原始字符串:', signString)
  return crypto.createHash('md5').update(signString).digest('hex').toLowerCase()
 }
 

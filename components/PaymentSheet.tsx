@@ -823,13 +823,19 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         body: JSON.stringify(requestBody),
       })
 
-      const result = await response.json()
+      const responseText = await response.text()
+      let result: any = {}
+      try {
+        result = responseText ? JSON.parse(responseText) : {}
+      } catch {
+        result = { error: responseText }
+      }
       console.log('📥 [自检环节 3 - 后端返回数据]:', result)
 
-      if (result.errcode !== 0) {
-        const rawMsg = (result.errmsg || result.error || "").toString().trim()
+      if (!response.ok || result.errcode !== 0) {
+        const rawMsg = (result?.errmsg || result?.error || responseText || `HTTP ${response.status} ${response.statusText}`).toString().trim()
         const readableMsg = rawMsg && !rawMsg.includes("??") ? rawMsg : "支付通道暂不可用，请稍后重试或联系商家"
-        throw new Error(`创建支付订单失败（${result.errcode}）：${readableMsg}`)
+        throw new Error(`创建支付订单失败（${response.status}${result?.errcode ? ` / ${result.errcode}` : ""}）：${readableMsg}`)
       }
 
       const targetUrl = result.url || result.paymentUrl
@@ -858,9 +864,11 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
     } catch (error) {
       console.error("❌ [DEBUG] 创建支付订单错误:", error)
       setIsProcessing(false)
+      const message = error instanceof Error ? error.message : "请稍后重试"
+      alert(`支付发起失败：${message}`)
       toast({
         title: "创建订单失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        description: message,
         variant: "destructive",
       })
     }
