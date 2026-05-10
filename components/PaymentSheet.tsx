@@ -328,10 +328,16 @@ function PaymentView({ selectedPayment, onSelectPayment, onContinue, total, isPr
       </motion.div>
 
       <motion.button
+        type="button"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, ...springTransition }}
-        onClick={onContinue}
+        onClick={() => {
+          console.log("🎯 [DEBUG] 确认支付按钮被点击")
+          console.log("📋 [DEBUG] 当前选中的支付方式:", selectedPayment)
+          console.log("⏳ [DEBUG] 当前 isProcessing:", isProcessing)
+          onContinue()
+        }}
         disabled={!selectedPayment || isProcessing}
         whileTap={selectedPayment && !isProcessing ? { scale: 0.97 } : {}}
         className={`w-full max-w-md mx-auto mt-6 py-4 md:py-4.5 rounded-2xl font-medium text-base transition-all duration-200 shadow-lg flex items-center justify-center gap-2 ${
@@ -770,15 +776,20 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         return
       }
 
-      const mockPaymentSuccess = Math.random() < 0.1
-      
-      if (mockPaymentSuccess) {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current)
+      try {
+        const response = await fetch(`/api/payment/status?orderId=${encodeURIComponent(orderId)}`)
+        const result = await response.json().catch(() => ({}))
+
+        if (result?.status === 'paid') {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current)
+          }
+          setIsPolling(false)
+          setDirection(1)
+          setCurrentView("success")
         }
-        setIsPolling(false)
-        setDirection(1)
-        setCurrentView("success")
+      } catch (error) {
+        console.error("❌ [DEBUG] 支付状态轮询失败:", error)
       }
     }, 2000)
   }, [])
@@ -791,9 +802,12 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
     
     console.log("🎯 [DEBUG] handleContinueToQR 被调用")
     console.log("📋 [DEBUG] selectedPayment:", selectedPayment)
+    console.log("📦 [DEBUG] shippingData:", shippingData)
+    console.log("🖼️ [DEBUG] generatedImageUrl 存在:", !!generatedImageUrl)
     
     if (!selectedPayment) {
-      console.log("❌ [DEBUG] 没有选择支付方式")
+      console.error("❌ [DEBUG] 没有选择支付方式")
+      alert("支付发起失败：未选择支付方式")
       return
     }
 
@@ -822,6 +836,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         },
         body: JSON.stringify(requestBody),
       })
+      console.log('🌐 [DEBUG] /api/payment/create status:', response.status, response.statusText)
 
       const responseText = await response.text()
       let result: any = {}
@@ -831,10 +846,21 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         result = { error: responseText }
       }
       console.log('📥 [自检环节 3 - 后端返回数据]:', result)
+      console.log('🧾 [DEBUG] 原始响应文本]:', responseText)
 
       if (!response.ok || result.errcode !== 0) {
         const rawMsg = (result?.errmsg || result?.error || responseText || `HTTP ${response.status} ${response.statusText}`).toString().trim()
         const readableMsg = rawMsg && !rawMsg.includes("??") ? rawMsg : "支付通道暂不可用，请稍后重试或联系商家"
+        console.error("❌ [DEBUG] 支付接口失败详情:", {
+          httpStatus: response.status,
+          httpStatusText: response.statusText,
+          errcode: result?.errcode,
+          errmsg: result?.errmsg,
+          error: result?.error,
+          rawMsg,
+          requestBody,
+          responseText,
+        })
         throw new Error(`创建支付订单失败（${response.status}${result?.errcode ? ` / ${result.errcode}` : ""}）：${readableMsg}`)
       }
 
@@ -871,6 +897,7 @@ export default function PaymentSheet({ isOpen, onClose, total, generatedImageUrl
         description: message,
         variant: "destructive",
       })
+      console.error("🧨 [DEBUG] 已弹出失败提示，便于继续排查")
     }
   }, [selectedPayment, shippingData.name, shippingData.phone, shippingData.address, tshirtColor, generatedImageUrl, toast])
 

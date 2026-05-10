@@ -112,6 +112,7 @@ async function insertPendingOrder(params: {
 
 export async function POST(request: NextRequest) {
  try {
+   console.log("[雷达 1] 开始接收前端请求参数:", await request.clone().json().catch(() => ({})))
    const body = (await request.json().catch(() => ({}))) as CreatePaymentRequestBody
 
    const title = typeof body.title === 'string' && body.title.trim() ? body.title.trim() : '观象高定宠物服装'
@@ -142,6 +143,10 @@ export async function POST(request: NextRequest) {
    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
    const gateway = process.env.XUNHU_GATEWAY || 'https://api.xunhupay.com/payment/do.html'
 
+   console.log("[雷达 2] 检查环境变量，Supabase Key 是否存在:", !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+   console.log("[雷达 2b] 当前 AppID:", appId)
+   console.log("[雷达 2c] 当前支付网关:", gateway)
+
    if (!appSecret) {
      return NextResponse.json({ errcode: -1, error: '支付密钥未配置' }, { status: 500 })
    }
@@ -152,13 +157,16 @@ export async function POST(request: NextRequest) {
 
    let orderId: string
    try {
+     console.log("[雷达 3] 准备写入数据库...")
      const inserted = await insertPendingOrder({
        title, totalFee, paymentMethod, shippingName, shippingPhone,
        shippingAddress, tshirtColor, generatedImageUrl, size,
      })
      orderId = inserted.orderId
+     console.log("[雷达 4] 数据库写入成功，准备调用虎皮椒签名...")
    } catch (insertError) {
-     return NextResponse.json({ errcode: -11, error: '创建订单写库失败' }, { status: 500 })
+     console.error("❌ [致命错误] 数据库写入失败:", insertError)
+     return NextResponse.json({ errcode: -11, errmsg: insertError instanceof Error ? insertError.message : String(insertError), error: '创建订单写库失败' }, { status: 500 })
    }
 
    const params: Record<string, string> = {
@@ -183,7 +191,7 @@ export async function POST(request: NextRequest) {
 
    const responseText = await upstreamRes.text()
    if (!upstreamRes.ok) {
-     return NextResponse.json({ errcode: upstreamRes.status, error: '下单失败', orderId }, { status: 502 })
+     return NextResponse.json({ errcode: upstreamRes.status, error: '下单失败', errmsg: responseText, orderId }, { status: 502 })
    }
 
    let upstream = JSON.parse(responseText)
@@ -191,6 +199,7 @@ export async function POST(request: NextRequest) {
 
    return NextResponse.json({ errcode: upstream.errcode || 0, url, paymentUrl: url, orderId })
  } catch (error) {
-   return NextResponse.json({ errcode: -1, error: '创建支付订单失败' }, { status: 500 })
+   console.error("❌ [致命错误]", error)
+   return NextResponse.json({ errcode: -1, errmsg: error instanceof Error ? error.message : String(error), error: error instanceof Error ? error.message : String(error) }, { status: 500 })
  }
 }
